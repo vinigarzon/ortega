@@ -1,0 +1,116 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { listLawyers } from "@/lib/queries";
+
+export const prerender = false;
+
+const lawyers = await listLawyers();
+const active = lawyers.filter((l) => l.active).length;
+const inactive = lawyers.length - active;
+---
+<AdminLayout title="Equipo" active="lawyers">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">Contenido</div>
+      <h1>Equipo</h1>
+      <p class="page-header__desc">
+        {lawyers.length === 0
+          ? "Aún no hay miembros del equipo."
+          : `${active} activo${active === 1 ? "" : "s"}${inactive > 0 ? ` · ${inactive} oculto${inactive === 1 ? "" : "s"}` : ""}.`}
+      </p>
+    </div>
+    <div class="page-header__actions">
+      <a class="btn btn-primary" href="/admin/lawyers/new">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo miembro
+      </a>
+    </div>
+  </header>
+
+  {lawyers.length === 0 ? (
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Aún no hay miembros del equipo</h3>
+        <p>Agrega a las personas que aparecen en la sección "Nuestro Equipo" de la home.</p>
+        <a class="btn btn-primary" href="/admin/lawyers/new">Crear el primero</a>
+      </div>
+    </div>
+  ) : (
+    <div class="team-grid">
+      {lawyers.map((l) => (
+        <a href={`/admin/lawyers/${l.slug}`} class="team-card">
+          <div class="team-card__photo">
+            {l.photo
+              ? <img src={l.photo} alt={l.name} loading="lazy" />
+              : <div class="team-card__placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>}
+            {!l.active && <span class="team-card__badge-overlay">Oculto</span>}
+            <span class="team-card__hover">Editar</span>
+          </div>
+          <div class="team-card__body">
+            <strong>{l.name}</strong>
+            <span class="pos">{l.position}</span>
+            {l.specialty && <span class="spec">{l.specialty}</span>}
+            <div class="team-card__footer">
+              <span class="badge badge-neutral">Orden {l.order}</span>
+              {l.active
+                ? <span class="badge badge-pub">Activo</span>
+                : <span class="badge badge-draft">Oculto</span>}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  )}
+
+  <style>
+    .team-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .team-card {
+      display: flex; flex-direction: column;
+      background: var(--c-surface); border: 1px solid var(--c-border-soft);
+      border-radius: var(--r-lg); overflow: hidden;
+      box-shadow: var(--sh-sm);
+      transition: transform var(--tr-base), box-shadow var(--tr-base), border-color var(--tr-base);
+    }
+    .team-card:hover {
+      transform: translateY(-3px); box-shadow: var(--sh-lg);
+      border-color: rgba(67, 76, 140, .15);
+    }
+    .team-card__photo {
+      position: relative; aspect-ratio: 4 / 3;
+      background: linear-gradient(135deg, var(--c-primary), var(--c-primary-d));
+      overflow: hidden;
+    }
+    .team-card__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .team-card__placeholder {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,.4);
+    }
+    .team-card__placeholder svg { width: 48px; height: 48px; }
+    .team-card__hover {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(54, 61, 112, .8); color: #fff; font-size: 13px; font-weight: 600;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      opacity: 0; transition: opacity var(--tr-base);
+    }
+    .team-card:hover .team-card__hover { opacity: 1; }
+    .team-card__badge-overlay {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(255,255,255,.95); color: var(--c-text-dim);
+      padding: 3px 10px; border-radius: var(--r-full);
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .team-card__body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 2px; }
+    .team-card__body strong { font-family: var(--f-display); font-size: 18px; font-weight: 600; color: var(--c-text); }
+    .team-card__body .pos { font-size: 13px; color: var(--c-text-dim); }
+    .team-card__body .spec { font-size: 12px; color: var(--c-text-soft); font-style: italic; margin-top: 2px; }
+    .team-card__footer { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  </style>
+</AdminLayout>

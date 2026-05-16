@@ -1,0 +1,127 @@
+---
+/**
+ * BrandedPlaceholder — SVG inline que actúa como featured image cuando el post
+ * no tiene una imagen real. Cada post obtiene un placeholder único con su
+ * título sobre el fondo navy + acento dorado de la marca.
+ *
+ * Se renderiza dentro del mismo aspect-ratio (16:10) que ocuparía la imagen.
+ */
+interface Props {
+  title: string;
+  /** Etiqueta superior (eyebrow); por default la categoría. */
+  eyebrow?: string;
+}
+
+const { title, eyebrow = "Ortega & Ortega" } = Astro.props;
+
+// Trocear el título en líneas para SVG. Aprox 24 chars/línea, máx 4 líneas.
+function wrap(text: string, maxLen = 24, maxLines = 4): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length <= maxLen) {
+      cur = (cur + " " + w).trim();
+    } else {
+      if (cur) lines.push(cur);
+      cur = w;
+      if (lines.length === maxLines - 1) {
+        // Last line — concat rest and truncate
+        let rest = cur;
+        for (const remaining of words.slice(words.indexOf(w) + 1)) {
+          rest += " " + remaining;
+        }
+        if (rest.length > maxLen) rest = rest.slice(0, maxLen - 1) + "…";
+        lines.push(rest);
+        return lines;
+      }
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, maxLines);
+}
+
+const lines = wrap(title);
+// Centrado vertical: alturas y posiciones dinámicas
+const lineH = 36;
+const titleBlockH = lines.length * lineH;
+const cy = 200; // mid of 400 height (svg 800x500 viewbox)
+const startY = cy - titleBlockH / 2 + lineH * 0.75;
+
+const safeEyebrow = eyebrow.toUpperCase();
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 800 500"
+  preserveAspectRatio="xMidYMid slice"
+  class="h-full w-full"
+  role="img"
+  aria-label={title}
+>
+  {/* Fondo navy con gradiente sutil */}
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#434c8c" />
+      <stop offset="100%" stop-color="#2a2f57" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+
+  {/* Icono real del logo (esquina superior izquierda) */}
+  <image
+    href="/uploads/brand/icono.png"
+    x="36"
+    y="36"
+    width="80"
+    height="80"
+    opacity="0.85"
+  />
+
+
+  {/* Eyebrow dorado */}
+  <text
+    x="400"
+    y="100"
+    fill="#ccbc54"
+    font-family="Inter, Arial, sans-serif"
+    font-size="14"
+    font-weight="600"
+    letter-spacing="3"
+    text-anchor="middle"
+  >
+    {safeEyebrow}
+  </text>
+
+  {/* Línea decorativa */}
+  <line x1="370" y1="120" x2="430" y2="120" stroke="#ccbc54" stroke-width="2" />
+
+  {/* Título envuelto */}
+  {lines.map((line, idx) => (
+    <text
+      x="400"
+      y={startY + idx * lineH}
+      fill="#ffffff"
+      font-family="Georgia, serif"
+      font-size="30"
+      font-weight="600"
+      text-anchor="middle"
+    >
+      {line}
+    </text>
+  ))}
+
+  {/* Marca abajo */}
+  <text
+    x="400"
+    y="450"
+    fill="#a8b1d4"
+    font-family="Inter, Arial, sans-serif"
+    font-size="11"
+    font-weight="500"
+    letter-spacing="3"
+    text-anchor="middle"
+  >
+    ORTEGA &amp; ORTEGA · ABOGADOS
+  </text>
+</svg>

@@ -1,0 +1,51 @@
+{
+  "homepage": {
+    "hero": {
+      "title": "",
+      "subtitle": "Firma de abogados penalistas y constitucionalistas ecuatorianos, comprometidos con la defensa de los derechos de sus clientes",
+      "backgroundImage": "/uploads/wp/2023/06/FONDO-scaled.jpg",
+      "buttonText": "Contáctenos",
+      "buttonLink": "/contacto/"
+    },
+    "sections": [
+      {
+        "id": "historia",
+        "eyebrow": "IDENTIDAD CORPORATIVA",
+        "title": "HISTORIA",
+        "body": "**ORTEGA & ORTEGA Abogados** desde el año 2004 ha venido patrocinando causas penales y constitucionales mediante un conocimiento profundo y una vasta experiencia, que se ha traducido en una defensa y representación legal eficiente y oportuna.\n\nLa formación académica continua y responsable de su equipo, permite que sus clientes tengan la suficiente confianza para entregar en sus manos los distintos litigios legales, procurando en todo momento una defensa material y técnica especializada. Su formación además, permite prever las estrategias legales de las contrapartes y replicarlas en igualdad de condiciones, buscando soluciones favorables de las causas de quienes confían en ellos.\n\n**NOSOTROS:** **ORTEGA & ORTEGA**, es una firma de abogados comprometida con la defensa de los derechos de sus clientes, que ha profundizado su estudio en el ámbito penal. Gracias a la formación académica y experiencia profesional de sus asociados, **ORTEGA & ORTEGA Abogados** garantiza una defensa técnica a lo largo y ancho del territorio ecuatoriano, manteniendo su oficina principal en la ciudad de Quito."
+      },
+      {
+        "id": "valores",
+        "eyebrow": "NUESTROS",
+        "title": "VALORES",
+        "list": [
+          "Compromiso",
+          "Lealtad",
+          "Honestidad",
+          "Excelencia",
+          "Ética",
+          "Confianza"
+        ]
+      },
+      {
+        "id": "mision",
+        "eyebrow": "NUESTRA",
+        "title": "MISIÓN Y VISIÓN",
+        "body": "**MISIÓN:** **ORTEGA & ORTEGA Abogados** desarrolla la mejor estrategia dentro del marco constitucional y legal, con observancia de los principales instrumentos internacionales, en los distintos procesos legales. La protección y la defensa de los derechos de nuestros clientes, en pro del valor de la justicia, se encuentra entre nuestros objetivos primarios, asegurando siempre una filosofía de trabajo y servicio al cliente de primer nivel, orientada a la defensa de su libertad, su honor y su patrimonio.\n\n**VISIÓN:** Ser la firma de abogados litigantes más reconocida a nivel nacional, por su compromiso, profesionalismo y resultados con sus clientes."
+      },
+      {
+        "id": "fortalezas",
+        "eyebrow": "NUESTRAS",
+        "title": "FORTALEZAS",
+        "list": [
+          "Brindar asesoría eficaz, integral y oportuna.",
+          "Proteger y defender los derechos de nuestros clientes.",
+          "Defender la libertad, el honor y el patrimonio de quienes confían en nosotros.",
+          "Consolidar estrategias legales integrales y coordinar el trabajo con otras instancias.",
+          "Mantener cooperación con otras firmas y asociaciones jurídicas en pro de la justicia."
+        ],
+        "image": "/uploads/wp/2025/01/WhatsApp-Image-2025-01-09-at-4.03.24-PM-1024x680.jpeg"
+      }
+    ]
+  }
+}

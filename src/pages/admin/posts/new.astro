@@ -1,0 +1,23 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import PostEditor from "@/components/admin/PostEditor.astro";
+import { listCategories } from "@/lib/queries";
+
+export const prerender = false;
+
+const dbCats = await listCategories();
+const fixed = ["Entrevistas", "Legal", "Deportes", "Ponencias"];
+const categories = Array.from(new Set([...fixed, ...dbCats])).sort();
+---
+<AdminLayout title="Nueva publicación" active="posts">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">
+        <a href="/admin/posts">Publicaciones</a> · Nueva
+      </div>
+      <h1>Nueva publicación</h1>
+      <p class="page-header__desc">Llena los datos y guarda. Si marcas "borrador" no se publica al sitio.</p>
+    </div>
+  </header>
+  <PostEditor mode="create" categories={categories} />
+</AdminLayout>

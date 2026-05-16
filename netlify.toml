@@ -1,0 +1,69 @@
+[build]
+  command = "npm run build"
+  # En SSR con @astrojs/netlify, Astro publica en `dist` pero las funciones
+  # Astro generadas (`.netlify/functions-internal/`) las maneja el adapter.
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Formulario de contacto sigue siendo una Netlify Function dedicada
+[[redirects]]
+  from = "/api/contact"
+  to = "/.netlify/functions/contact"
+  status = 200
+  force = true
+
+# ---------------------------------------------------------------------------
+# Preservación de permalinks WordPress
+# ---------------------------------------------------------------------------
+[[redirects]]
+  from = "/index.php/blogger/*"
+  to = "/blog/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/index.php/contacto/*"
+  to = "/contacto/"
+  status = 301
+
+[[redirects]]
+  from = "/redes-sociales/*"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/index.php/redes-sociales/*"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/index.php/category/*"
+  to = "/blog/categoria/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/index.php/:year/:month/:day/:slug"
+  to = "/blog/:slug/"
+  status = 301
+
+# ---------------------------------------------------------------------------
+# Headers de seguridad
+# ---------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# El admin NO debe ser indexado por buscadores
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

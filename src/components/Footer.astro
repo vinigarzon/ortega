@@ -1,0 +1,177 @@
+---
+import { getSiteSettings } from "../lib/settings";
+const { site, footer, contact, social } = await getSiteSettings();
+
+const logo = site?.logo ?? "/uploads/brand/logo-horizontal.png";
+const title = site?.title ?? "Ortega & Ortega Abogados";
+const copyright = footer?.copyright ?? "© 2026 ORTEGA & ORTEGA ABOGADOS";
+
+interface SocialItem { label: string; href: string; icon: string }
+const socialLinks: SocialItem[] = [];
+if (social?.instagram)
+  socialLinks.push({
+    label: "Instagram",
+    href: social.instagram,
+    icon: "M12 2.2c3.2 0 3.6 0 4.8.1c1.2.1 2 .2 2.7.5c.7.3 1.3.6 1.9 1.2c.6.6.9 1.2 1.2 1.9c.3.7.4 1.5.5 2.7c.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 2-.5 2.7c-.3.7-.6 1.3-1.2 1.9c-.6.6-1.2.9-1.9 1.2c-.7.3-1.5.4-2.7.5c-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-2-.2-2.7-.5c-.7-.3-1.3-.6-1.9-1.2c-.6-.6-.9-1.2-1.2-1.9c-.3-.7-.4-1.5-.5-2.7C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-2 .5-2.7c.3-.7.6-1.3 1.2-1.9c.6-.6 1.2-.9 1.9-1.2c.7-.3 1.5-.4 2.7-.5c1.2-.1 1.6-.1 4.8-.1Zm0 1.8c-3.2 0-3.5 0-4.7.1c-1.1.1-1.7.2-2.1.4c-.5.2-.9.4-1.3.9c-.4.4-.7.8-.9 1.3c-.2.4-.3 1-.4 2.1c-.1 1.2-.1 1.5-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.7.4 2.1c.2.5.4.9.9 1.3c.4.4.8.7 1.3.9c.4.2 1 .3 2.1.4c1.2.1 1.5.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4c.5-.2.9-.4 1.3-.9c.4-.4.7-.8.9-1.3c.2-.4.3-1 .4-2.1c.1-1.2.1-1.5.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.7-.4-2.1c-.2-.5-.4-.9-.9-1.3c-.4-.4-.8-.7-1.3-.9c-.4-.2-1-.3-2.1-.4c-1.2-.1-1.5-.1-4.7-.1Zm0 3.1a5 5 0 1 1 0 10a5 5 0 0 1 0-10Zm0 1.8a3.2 3.2 0 1 0 0 6.4a3.2 3.2 0 0 0 0-6.4Zm5.2-2a1.2 1.2 0 1 1 0 2.4a1.2 1.2 0 0 1 0-2.4Z",
+  });
+if (social?.twitter)
+  socialLinks.push({
+    label: "Twitter / X",
+    href: social.twitter,
+    icon: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
+  });
+if (social?.facebook)
+  socialLinks.push({
+    label: "Facebook",
+    href: social.facebook,
+    icon: "M22 12a10 10 0 1 0-11.5 9.9V14.9h-2v-2.9h2V9.4c0-2 1.2-3.2 3.1-3.2c.9 0 1.8.2 1.8.2v2h-1c-1 0-1.3.6-1.3 1.3v1.5h2.3l-.4 2.9h-1.9v6.9A10 10 0 0 0 22 12Z",
+  });
+if (social?.linkedin)
+  socialLinks.push({
+    label: "LinkedIn",
+    href: social.linkedin,
+    icon: "M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2ZM8.3 18.3H5.7V9.7h2.6v8.6Zm-1.3-9.8a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3Zm11.3 9.8h-2.6v-4.4c0-1.1 0-2.4-1.5-2.4s-1.7 1.1-1.7 2.3v4.5h-2.6V9.7h2.5v1.2h.1c.4-.7 1.3-1.4 2.7-1.4c2.9 0 3.4 1.9 3.4 4.3v5Z",
+  });
+if (social?.youtube)
+  socialLinks.push({
+    label: "YouTube",
+    href: social.youtube,
+    icon: "M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.8-.9-2.3-1C16.4 3.6 12 3.6 12 3.6h0s-4.4 0-7.8.3c-.5.1-1.4.1-2.3 1C1.2 5.6 1 7.2 1 7.2S.8 9.1.8 11v1.9c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.6 1c1.9.2 7.5.3 7.5.3s4.4 0 7.8-.3c.5-.1 1.4-.1 2.3-1c.7-.7.9-2.3.9-2.3s.2-1.9.2-3.8V11c0-1.9-.2-3.8-.2-3.8ZM10 14.6V8.3l5.7 3.2L10 14.6Z",
+  });
+
+const phoneClean = (p?: string) => (p ? p.replace(/[^+\d]/g, "") : "");
+---
+
+<footer class="bg-bone-200 text-ink border-t border-ink/10">
+  <div class="container-site py-14 md:py-16">
+    <div class="grid gap-10 md:grid-cols-12 md:gap-10 items-start">
+      {/* Columna 1 — Branding */}
+      <div class="md:col-span-4">
+        <a href="/" class="inline-block" aria-label="Inicio">
+          <img
+            src={logo}
+            alt={title}
+            class="h-12 md:h-14 w-auto"
+            loading="lazy"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"
+          />
+          <span
+            class="hidden font-serif text-2xl font-semibold text-ink"
+            >ORTEGA &amp; ORTEGA</span
+          >
+        </a>
+        <p class="mt-4 text-sm text-ink-700/80 max-w-sm leading-relaxed">
+          Firma de abogados penalistas y constitucionalistas comprometidos con
+          la defensa de los derechos de sus clientes.
+        </p>
+
+        {socialLinks.length > 0 && (
+          <ul class="mt-6 flex flex-wrap gap-2">
+            {socialLinks.map((s) => (
+              <li>
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/30 text-ink hover:bg-gold hover:border-gold hover:text-white transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                    <path d={s.icon} />
+                  </svg>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Columna 2 — Contacto */}
+      <div class="md:col-span-5">
+        <h3 class="text-xs font-semibold uppercase tracking-widest text-gold-dark">
+          Contacto
+        </h3>
+        <ul class="mt-4 space-y-3 text-sm text-ink-700/90">
+          {contact?.address && (
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 shrink-0 text-gold-dark">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span class="leading-relaxed">{contact.address}</span>
+            </li>
+          )}
+          {contact?.phone && (
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 shrink-0 text-gold-dark">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <a href={`tel:${phoneClean(contact.phone)}`} class="hover:text-gold-dark">
+                <span class="text-ink-600 text-xs uppercase tracking-widest">Fijo</span><br />
+                {contact.phone}
+              </a>
+            </li>
+          )}
+          {contact?.mobile && (
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 shrink-0 text-gold-dark">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12" y2="18"></line>
+              </svg>
+              <a href={`tel:${phoneClean(contact.mobile)}`} class="hover:text-gold-dark">
+                <span class="text-ink-600 text-xs uppercase tracking-widest">Móvil</span><br />
+                {contact.mobile}
+              </a>
+            </li>
+          )}
+          {contact?.mobile2 && (
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 shrink-0 text-gold-dark">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              </svg>
+              <a href={`tel:${phoneClean(contact.mobile2)}`} class="hover:text-gold-dark">
+                <span class="text-ink-600 text-xs uppercase tracking-widest">Móvil</span><br />
+                {contact.mobile2}
+              </a>
+            </li>
+          )}
+          {contact?.email && (
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 shrink-0 text-gold-dark">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <a href={`mailto:${contact.email}`} class="hover:text-gold-dark break-all">
+                {contact.email}
+              </a>
+            </li>
+          )}
+        </ul>
+      </div>
+
+      {/* Columna 3 — Navegación */}
+      <div class="md:col-span-3">
+        <h3 class="text-xs font-semibold uppercase tracking-widest text-gold-dark">
+          Navegación
+        </h3>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li><a href="/" class="text-ink-700 hover:text-gold-dark">Inicio</a></li>
+          <li><a href="/#historia" class="text-ink-700 hover:text-gold-dark">Historia</a></li>
+          <li><a href="/#mision" class="text-ink-700 hover:text-gold-dark">Misión y Visión</a></li>
+          <li><a href="/#equipo" class="text-ink-700 hover:text-gold-dark">Equipo</a></li>
+          <li><a href="/blog/" class="text-ink-700 hover:text-gold-dark">Blog</a></li>
+          <li><a href="/videoteca/" class="text-ink-700 hover:text-gold-dark">Videoteca</a></li>
+          <li><a href="/contacto/" class="text-ink-700 hover:text-gold-dark">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-ink/10">
+    <div
+      class="container-site py-5 text-center text-xs uppercase tracking-widest text-ink-700/70"
+    >
+      {copyright}
+    </div>
+  </div>
+</footer>

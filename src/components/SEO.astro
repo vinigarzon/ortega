@@ -1,0 +1,51 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  type?: string;
+  canonical?: string;
+}
+
+const {
+  title,
+  description,
+  image,
+  type = "website",
+  canonical,
+} = Astro.props;
+
+const siteName = "Ortega & Ortega Abogados";
+const fullTitle = title
+  ? `${title} — ${siteName}`
+  : `${siteName} — Abogados Penalistas Ecuador`;
+const fullDesc =
+  description ??
+  "Firma de abogados penalistas y constitucionalistas comprometidos con la defensa de los derechos de sus clientes en Ecuador.";
+
+const url = canonical ?? new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = image ?? "/uploads/og-image.jpg";
+const ogImageUrl = ogImage.startsWith("http")
+  ? ogImage
+  : new URL(ogImage, Astro.site).toString();
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={fullDesc} />
+<link rel="canonical" href={url} />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+
+<!-- Open Graph -->
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={fullDesc} />
+<meta property="og:url" content={url} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:locale" content="es_EC" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={fullDesc} />
+<meta name="twitter:image" content={ogImageUrl} />

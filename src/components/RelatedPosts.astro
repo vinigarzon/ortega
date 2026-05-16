@@ -1,0 +1,86 @@
+---
+/**
+ * RelatedPosts — 3 publicaciones relacionadas (mismo type, prioriza misma cat).
+ * Lee directamente de Turso.
+ *
+ * Props:
+ *   current: { slug, data: { category, type } }  — shape mínimo compatible.
+ *   count?: número (default 3)
+ *   title?: encabezado opcional
+ */
+import BlogCard from "./BlogCard.astro";
+import { db } from "@/lib/db";
+
+interface Props {
+  current: { slug: string; data: { category?: string; type?: "blog" | "videoteca" } };
+  count?: number;
+  title?: string;
+}
+
+const { current, count = 3, title } = Astro.props;
+const isVideo = current.data.type === "videoteca";
+const type = isVideo ? "videoteca" : "blog";
+const category = current.data.category ?? "";
+
+// 1) Mismo type + misma categoría
+const sameCat = await db.execute({
+  sql: `SELECT slug, title, date, excerpt, category, type, featured_image
+        FROM posts
+        WHERE type = ? AND draft = 0 AND category = ? AND slug != ?
+        ORDER BY date DESC LIMIT ?`,
+  args: [type, category, current.slug, count],
+});
+let picked: any[] = sameCat.rows;
+
+// 2) Si faltan, completar con mismo type otra categoría
+if (picked.length < count) {
+  const need = count - picked.length;
+  const taken = picked.map((r: any) => String(r.slug)).concat([current.slug]);
+  const placeholders = taken.map(() => "?").join(",");
+  const fill = await db.execute({
+    sql: `SELECT slug, title, date, excerpt, category, type, featured_image
+          FROM posts
+          WHERE type = ? AND draft = 0 AND slug NOT IN (${placeholders})
+          ORDER BY date DESC LIMIT ?`,
+    args: [type, ...taken, need],
+  });
+  picked = picked.concat(fill.rows);
+}
+
+const items = picked.map((r: any) => ({
+  slug: String(r.slug),
+  title: String(r.title),
+  date: new Date(String(r.date)),
+  excerpt: r.excerpt ? String(r.excerpt) : "",
+  category: String(r.category ?? ""),
+  type: r.type === "videoteca" ? "videoteca" : "blog",
+  featuredImage: r.featured_image ?? undefined,
+}));
+
+const heading = title ?? (isVideo ? "También en la videoteca" : "Otros artículos del blog");
+---
+
+{items.length > 0 && (
+  <section class="bg-white py-14 md:py-20 border-t border-ink/10">
+    <div class="container-site">
+      <h2 class="font-serif text-2xl md:text-3xl font-bold text-ink mb-2">
+        {heading}
+      </h2>
+      <div class="divider !mx-0"></div>
+
+      <div class="mt-8 grid gap-7 md:grid-cols-3">
+        {items.map((p) => (
+          <BlogCard
+            href={`${p.type === "videoteca" ? "/videoteca" : "/blog"}/${p.slug}/`}
+            title={p.title}
+            date={p.date}
+            excerpt={p.excerpt}
+            category={p.category}
+            featuredImage={p.featuredImage}
+            ctaLabel={p.type === "videoteca" ? "Ver →" : "Leer más →"}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+)}

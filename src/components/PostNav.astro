@@ -1,0 +1,76 @@
+---
+/**
+ * PostNav — navegación al post anterior y siguiente dentro de la misma colección.
+ * Se renderiza al final del post, antes del bloque de "Relacionados".
+ */
+/**
+ * Shape mínimo: { slug, data: { title } }. Compatible con cualquier objeto
+ * que tenga esos dos campos (incluido los que devolvía Content Collections).
+ */
+interface NavPost {
+  slug: string;
+  data: { title: string };
+}
+
+interface Props {
+  prev?: NavPost | null;
+  next?: NavPost | null;
+  /** Base URL para construir los links ("/blog" o "/videoteca"). */
+  base: string;
+}
+
+const { prev, next, base } = Astro.props;
+---
+
+{(prev || next) && (
+  <nav
+    class="mt-10 grid gap-3 md:grid-cols-2 border-y border-ink/10 py-6"
+    aria-label="Navegación entre publicaciones"
+  >
+    {prev ? (
+      <a
+        href={`${base}/${prev.slug}/`}
+        class="group flex items-start gap-3 p-4 -m-1 hover:bg-ink/5 transition-colors md:col-span-1"
+      >
+        <span class="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink/30 text-ink group-hover:bg-ink group-hover:text-white group-hover:border-ink transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">
+            Anterior
+          </p>
+          <p class="mt-1 font-serif text-base md:text-lg text-ink leading-snug group-hover:text-gold-dark line-clamp-2">
+            {prev.data.title}
+          </p>
+        </div>
+      </a>
+    ) : (
+      <span class="hidden md:block" />
+    )}
+
+    {next ? (
+      <a
+        href={`${base}/${next.slug}/`}
+        class="group flex items-start gap-3 p-4 -m-1 hover:bg-ink/5 transition-colors md:text-right md:flex-row-reverse"
+      >
+        <span class="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink/30 text-ink group-hover:bg-ink group-hover:text-white group-hover:border-ink transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">
+            Siguiente
+          </p>
+          <p class="mt-1 font-serif text-base md:text-lg text-ink leading-snug group-hover:text-gold-dark line-clamp-2">
+            {next.data.title}
+          </p>
+        </div>
+      </a>
+    ) : (
+      <span class="hidden md:block" />
+    )}
+  </nav>
+)}

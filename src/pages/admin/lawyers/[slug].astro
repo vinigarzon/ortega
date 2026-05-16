@@ -1,0 +1,23 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import LawyerEditor from "@/components/admin/LawyerEditor.astro";
+import { getLawyerBySlug } from "@/lib/queries";
+
+export const prerender = false;
+
+const slug = Astro.params.slug as string;
+const lawyer = await getLawyerBySlug(slug);
+if (!lawyer) return Astro.redirect("/admin/lawyers");
+---
+<AdminLayout title={`Editar — ${lawyer.name}`} active="lawyers">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">
+        <a href="/admin/lawyers">Equipo</a> · Editar
+      </div>
+      <h1>{lawyer.name}</h1>
+      <p class="page-header__desc">{lawyer.position}{lawyer.specialty ? ` · ${lawyer.specialty}` : ""}</p>
+    </div>
+  </header>
+  <LawyerEditor mode="edit" lawyer={lawyer} />
+</AdminLayout>

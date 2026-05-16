@@ -1,0 +1,76 @@
+{
+  "autoplay": true,
+  "intervalSeconds": 5,
+  "transitionMs": 700,
+  "showArrows": true,
+  "showDots": true,
+  "pauseOnHover": true,
+  "items": [
+    {
+      "image": "/uploads/gallery/jlo.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 1
+    },
+    {
+      "image": "/uploads/gallery/jlo2.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 2
+    },
+    {
+      "image": "/uploads/gallery/jlo3.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 3
+    },
+    {
+      "image": "/uploads/gallery/jlo4.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 4
+    },
+    {
+      "image": "/uploads/gallery/jlos.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 5
+    },
+    {
+      "image": "/uploads/gallery/secre.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 6
+    },
+    {
+      "image": "/uploads/gallery/ooa2.webp",
+      "caption": "",
+      "category": "equipo",
+      "order": 7
+    },
+    {
+      "image": "/uploads/gallery/Sala-de-Reuniones-Ortega-Ortega-Abogados.webp",
+      "caption": "Sala de reuniones — Ortega & Ortega Abogados",
+      "category": "oficina",
+      "order": 8
+    },
+    {
+      "image": "/uploads/gallery/office_ooa.webp",
+      "caption": "",
+      "category": "oficina",
+      "order": 9
+    },
+    {
+      "image": "/uploads/gallery/oficina_ooa2.webp",
+      "caption": "",
+      "category": "oficina",
+      "order": 10
+    },
+    {
+      "image": "/uploads/gallery/oficina_ooa3.webp",
+      "caption": "",
+      "category": "oficina",
+      "order": 11
+    }
+  ]
+}

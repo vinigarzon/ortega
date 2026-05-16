@@ -1,0 +1,202 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import LawyerCard from "../components/LawyerCard.astro";
+import GalleryGrid from "../components/GalleryGrid.astro";
+import { getSiteSettings } from "../lib/settings";
+import { renderInline } from "../lib/markdown";
+import { listLawyers, listGalleryItems, getGalleryConfig } from "@/lib/queries";
+
+export const prerender = false;
+
+const { homepage, seo } = await getSiteSettings();
+const hero = homepage?.hero;
+const sections = homepage?.sections ?? [];
+
+// Lawyers (desde Turso, solo activos, ordenados)
+const lawyers = await listLawyers({ activeOnly: true });
+
+// Gallery (config + items desde Turso)
+const galleryData = await getGalleryConfig();
+const galleryItems = await listGalleryItems();
+
+// Helper to find a section by id
+const findSection = (id: string) => sections.find((s) => s.id === id);
+const historia = findSection("historia");
+const valores = findSection("valores");
+const mision = findSection("mision");
+const fortalezas = findSection("fortalezas");
+---
+
+<Layout
+  title={seo?.metaTitle}
+  description={seo?.metaDescription}
+  image={seo?.ogImage}
+>
+  {
+    hero && (
+      <Hero
+        title={hero.title}
+        subtitle={hero.subtitle}
+        backgroundImage={hero.backgroundImage}
+        buttonText={hero.buttonText}
+        buttonLink={hero.buttonLink}
+      />
+    )
+  }
+
+  {/* IDENTIDAD CORPORATIVA — navy panel + content */}
+  <section id="historia" class="bg-bone-200">
+    <div class="grid lg:grid-cols-12">
+      {/* Panel navy */}
+      <div class="lg:col-span-4 bg-ink flex items-center py-16 lg:py-24 px-8 lg:px-12">
+        <h2 class="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+          IDENTIDAD<br />CORPORATIVA
+        </h2>
+      </div>
+
+      {/* Contenido */}
+      <div class="lg:col-span-8 py-12 lg:py-20 px-6 md:px-10 lg:px-14">
+        <div class="max-w-2xl">
+          <p class="eyebrow">{historia?.eyebrow ?? "IDENTIDAD"}</p>
+          <h3 class="mt-2 font-serif text-2xl md:text-3xl font-bold text-ink">
+            {historia?.title ?? "HISTORIA"}
+          </h3>
+          <div class="mt-4 prose-body" set:html={renderInline(historia?.body ?? "")} />
+
+          {valores?.list && valores.list.length > 0 && (
+            <div class="mt-10">
+              <p class="eyebrow">{valores.eyebrow ?? "NUESTROS"}</p>
+              <h3 class="mt-2 font-serif text-2xl md:text-3xl font-bold text-ink">
+                {valores.title ?? "VALORES"}
+              </h3>
+              <ul class="mt-4 grid gap-2 sm:grid-cols-2">
+                {valores.list.map((item) => (
+                  <li class="flex items-center gap-3 text-ink-800/90">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-gold" />
+                    <span class="font-medium">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* MISION Y VISION + FORTALEZAS — light bg, gold title */}
+  <section id="mision" class="section bg-bone-200">
+    <div class="container-site">
+      <SectionTitle
+        title={mision?.title ?? "MISIÓN y VISIÓN"}
+        gold={true}
+      />
+
+      <div class="grid gap-12 lg:grid-cols-2 items-start">
+        <div
+          class="prose-body text-ink-800/90"
+          set:html={renderInline(mision?.body ?? "")}
+        />
+        <div>
+          {fortalezas?.list && fortalezas.list.length > 0 && (
+            <div>
+              <h3 class="font-serif text-2xl font-bold text-ink">
+                <span class="text-ink">FORTALEZAS</span>
+              </h3>
+              <ul class="mt-4 space-y-3">
+                {fortalezas.list.map((item) => (
+                  <li class="flex gap-3 text-ink-800/90">
+                    <span class="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span class="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* FOTO GRUPAL DEL EQUIPO — editable desde /admin/settings/#homepage */}
+  {(homepage?.teamImage || "/uploads/team/equipo-grupal.jpg") && (
+    <section class="bg-bone-200">
+      <div class="w-full">
+        <img
+          src={homepage?.teamImage || "/uploads/team/equipo-grupal.jpg"}
+          alt="Equipo Ortega & Ortega Abogados"
+          class="block w-full h-auto"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </section>
+  )}
+
+  {/* EQUIPO */}
+  <section id="equipo" class="section bg-bone-200">
+    <div class="container-site">
+      <SectionTitle title="NUESTRO EQUIPO" gold={true} />
+      {
+        lawyers.length === 0 ? (
+          <p class="text-center text-ink/60">
+            Pronto publicaremos a nuestros abogados.
+          </p>
+        ) : (
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {lawyers.map((l) => (
+              <LawyerCard
+                name={l.name}
+                position={l.position}
+                photo={l.photo ?? undefined}
+                specialty={l.specialty ?? undefined}
+                phone={l.phone ?? undefined}
+                email={l.email ?? undefined}
+                photoZoom={l.photoZoom}
+                photoFocusY={l.photoFocusY}
+                bio={l.bio ?? ""}
+              />
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  {/* GALERIA */}
+  {galleryItems.length > 0 && (
+    <section id="galeria" class="section bg-bone-200">
+      <div class="container-site">
+        <SectionTitle title="GALERÍA" />
+        <GalleryGrid
+          items={galleryItems}
+          autoplay={galleryData?.autoplay}
+          intervalSeconds={galleryData?.intervalSeconds}
+          transitionMs={galleryData?.transitionMs}
+          showArrows={galleryData?.showArrows}
+          showDots={galleryData?.showDots}
+          pauseOnHover={galleryData?.pauseOnHover}
+        />
+      </div>
+    </section>
+  )}
+
+  {/* CTA */}
+  <section class="bg-ink py-16 md:py-20 text-center text-white">
+    <div class="container-site">
+      <p class="eyebrow text-gold-light">Estamos para servirle</p>
+      <h2 class="mt-3 font-serif text-3xl md:text-4xl text-white">
+        ¿Necesita asesoría legal?
+      </h2>
+      <p class="mx-auto mt-3 max-w-xl text-white/85">
+        Contáctenos hoy. Le brindaremos una asesoría eficaz, integral y
+        oportuna.
+      </p>
+      <div class="mt-8">
+        <a href="/contacto/" class="btn-light">Contáctenos</a>
+      </div>
+    </div>
+  </section>
+</Layout>

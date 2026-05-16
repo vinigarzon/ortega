@@ -1,0 +1,20 @@
+{
+  "contact": {
+    "phone": "+(593) 2 601 9970",
+    "mobile": "+(593) 99 980 8183",
+    "mobile2": "+(593) 98 081 8611",
+    "email": "orgabogados@hotmail.com",
+    "leadEmail": "orgabogados@hotmail.com",
+    "address": "Calle Portugal No. E10-77 y Av. Rep. del Salvador, Edif. Ámbar, Of. 701, Quito — Ecuador",
+    "mapsEmbed": "https://www.google.com/maps?q=Calle+Portugal+E10-77+y+Av.+Rep%C3%BAblica+del+Salvador,+Edif.+%C3%81mbar,+Quito,+Ecuador&output=embed",
+    "whatsapp": "https://api.whatsapp.com/send/?phone=593980818611"
+  },
+  "social": {
+    "twitter": "https://twitter.com/ortegajorgeluis",
+    "facebook": "",
+    "instagram": "https://www.instagram.com/ooabogadosec/",
+    "linkedin": "",
+    "youtube": "",
+    "tiktok": ""
+  }
+}

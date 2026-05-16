@@ -1,0 +1,259 @@
+---
+/**
+ * GalleryGrid — Carrusel automático tipo slider del home actual.
+ * Las opciones se controlan desde src/content/gallery/main.json
+ * y son editables desde /admin (Decap CMS).
+ */
+interface GalleryItem {
+  image: string;
+  caption?: string;
+  category?: string;
+  order?: number;
+}
+
+interface Props {
+  items: GalleryItem[];
+  autoplay?: boolean;
+  intervalSeconds?: number;
+  transitionMs?: number;
+  showArrows?: boolean;
+  showDots?: boolean;
+  pauseOnHover?: boolean;
+}
+
+const {
+  items,
+  autoplay = true,
+  intervalSeconds = 5,
+  transitionMs = 700,
+  showArrows = true,
+  showDots = true,
+  pauseOnHover = true,
+} = Astro.props;
+
+const sorted = [...items].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+const slug = `gal-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+{sorted.length > 0 && (
+  <div
+    class="ortega-gallery relative mx-auto w-full max-w-3xl select-none"
+    data-autoplay={autoplay ? "true" : "false"}
+    data-interval={String(intervalSeconds * 1000)}
+    data-transition={String(transitionMs)}
+    data-pause={pauseOnHover ? "true" : "false"}
+    data-id={slug}
+  >
+    {/* Track con aspect 4:5 (ligeramente vertical) — funciona bien con verticales y horizontales */}
+    <div
+      class="ortega-gallery-track relative aspect-[4/5] sm:aspect-[5/4] md:aspect-[16/11] overflow-hidden bg-ink/95 rounded-sm shadow-soft"
+    >
+      {sorted.map((it, i) => (
+        <figure
+          class={`ortega-slide absolute inset-0 flex items-center justify-center transition-opacity ease-in-out ${
+            i === 0 ? "opacity-100" : "opacity-0"
+          }`}
+          style={`transition-duration:${transitionMs}ms;`}
+          data-index={i}
+          aria-hidden={i === 0 ? "false" : "true"}
+        >
+          {/* Imagen difuminada de fondo — solo se ve cuando la imagen real es VERTICAL */}
+          <img
+            src={it.image}
+            alt=""
+            aria-hidden="true"
+            class="ortega-bg absolute inset-0 h-full w-full object-cover scale-110 blur-xl opacity-50 transition-opacity duration-200"
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+          />
+          {/* Imagen real — por defecto object-contain; JS la cambia a object-cover si es horizontal */}
+          <img
+            src={it.image}
+            alt={it.caption ?? ""}
+            class="ortega-main relative max-h-full max-w-full w-auto h-auto object-contain"
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+            fetchpriority={i === 0 ? "high" : "auto"}
+            data-orientation="auto"
+          />
+          {it.caption && (
+            <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/95 to-transparent p-4">
+              <p class="text-sm uppercase tracking-widest text-white">
+                {it.caption}
+              </p>
+            </figcaption>
+          )}
+        </figure>
+      ))}
+
+      {showArrows && sorted.length > 1 && (
+        <>
+          <button
+            type="button"
+            class="ortega-prev absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-white/80 text-ink hover:bg-white hover:text-gold-dark shadow"
+            aria-label="Anterior"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="ortega-next absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-white/80 text-ink hover:bg-white hover:text-gold-dark shadow"
+            aria-label="Siguiente"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </>
+      )}
+    </div>
+
+    {showDots && sorted.length > 1 && (
+      <div class="ortega-dots mt-5 flex items-center justify-center gap-2">
+        {sorted.map((_, i) => (
+          <button
+            type="button"
+            class={`ortega-dot h-2.5 w-2.5 rounded-full transition-all ${
+              i === 0 ? "bg-ink scale-125" : "bg-ink/30 hover:bg-ink/60"
+            }`}
+            data-go={i}
+            aria-label={`Ir a la imagen ${i + 1}`}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+<script>
+  // Carrusel: una instancia por cada .ortega-gallery
+  function initGallery(root: HTMLElement) {
+    const slides = Array.from(
+      root.querySelectorAll<HTMLElement>(".ortega-slide")
+    );
+    if (slides.length <= 1) return;
+    const dots = Array.from(
+      root.querySelectorAll<HTMLElement>(".ortega-dot")
+    );
+    const prev = root.querySelector<HTMLElement>(".ortega-prev");
+    const next = root.querySelector<HTMLElement>(".ortega-next");
+
+    const autoplay = root.dataset.autoplay === "true";
+    const interval = Number(root.dataset.interval ?? "5000");
+    const pause = root.dataset.pause === "true";
+
+    let current = 0;
+    let timer: number | null = null;
+
+    const go = (i: number) => {
+      const n = (i + slides.length) % slides.length;
+      slides.forEach((s, idx) => {
+        s.style.opacity = idx === n ? "1" : "0";
+        s.setAttribute("aria-hidden", idx === n ? "false" : "true");
+      });
+      dots.forEach((d, idx) => {
+        if (idx === n) {
+          d.classList.remove("bg-ink/30");
+          d.classList.add("bg-ink", "scale-125");
+        } else {
+          d.classList.remove("bg-ink", "scale-125");
+          d.classList.add("bg-ink/30");
+        }
+      });
+      current = n;
+    };
+
+    const start = () => {
+      if (!autoplay) return;
+      stop();
+      timer = window.setInterval(() => go(current + 1), interval);
+    };
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    prev?.addEventListener("click", () => {
+      go(current - 1);
+      start();
+    });
+    next?.addEventListener("click", () => {
+      go(current + 1);
+      start();
+    });
+    dots.forEach((d) =>
+      d.addEventListener("click", () => {
+        const i = Number(d.dataset.go ?? "0");
+        go(i);
+        start();
+      })
+    );
+
+    if (pause) {
+      root.addEventListener("mouseenter", stop);
+      root.addEventListener("mouseleave", start);
+    }
+
+    // Touch swipe (mobile)
+    let touchStartX = 0;
+    root.addEventListener(
+      "touchstart",
+      (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+        stop();
+      },
+      { passive: true }
+    );
+    root.addEventListener(
+      "touchend",
+      (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) {
+          go(current + (dx < 0 ? 1 : -1));
+        }
+        start();
+      },
+      { passive: true }
+    );
+
+    start();
+  }
+
+  document
+    .querySelectorAll<HTMLElement>(".ortega-gallery")
+    .forEach(initGallery);
+
+  // Detecta horizontal vs vertical: las horizontales llenan toda la card,
+  // las verticales mantienen el fondo difuminado a los lados.
+  function applyOrientation(img: HTMLImageElement) {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return;
+    const slide = img.closest(".ortega-slide") as HTMLElement | null;
+    const bg = slide?.querySelector<HTMLImageElement>(".ortega-bg");
+    if (w >= h) {
+      // Horizontal o cuadrada: llenar completamente, sin bordes
+      img.classList.remove("object-contain", "max-h-full", "max-w-full", "w-auto", "h-auto");
+      img.classList.add("object-cover", "absolute", "inset-0", "h-full", "w-full");
+      if (bg) bg.style.opacity = "0";
+      img.dataset.orientation = "horizontal";
+    } else {
+      // Vertical: mantener object-contain centrado + fondo difuminado visible
+      img.dataset.orientation = "vertical";
+    }
+  }
+
+  document
+    .querySelectorAll<HTMLImageElement>(".ortega-main")
+    .forEach((img) => {
+      if (img.complete) {
+        applyOrientation(img);
+      } else {
+        img.addEventListener("load", () => applyOrientation(img), { once: true });
+      }
+    });
+</script>

@@ -1,0 +1,101 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import VideoEmbed from "../../components/VideoEmbed.astro";
+import RelatedPosts from "../../components/RelatedPosts.astro";
+import PostNav from "../../components/PostNav.astro";
+import { getPostBySlug, listPosts } from "@/lib/queries";
+import { renderBody } from "@/lib/markdown";
+
+export const prerender = false;
+
+const slug = Astro.params.slug as string;
+const post = await getPostBySlug(slug);
+if (!post || post.draft || post.type === "videoteca") {
+  return new Response(null, { status: 404 });
+}
+
+// Determinar prev/next (siguiente = más nuevo, anterior = más viejo).
+// Para no traer 80 posts, hacemos dos queries direccionales acotadas.
+import { db } from "@/lib/db";
+const newerRes = await db.execute({
+  sql: `SELECT slug, title, date FROM posts
+        WHERE type = 'blog' AND draft = 0
+          AND (date > ? OR (date = ? AND id > ?))
+        ORDER BY date ASC, id ASC LIMIT 1`,
+  args: [post.date, post.date, post.id],
+});
+const olderRes = await db.execute({
+  sql: `SELECT slug, title, date FROM posts
+        WHERE type = 'blog' AND draft = 0
+          AND (date < ? OR (date = ? AND id < ?))
+        ORDER BY date DESC, id DESC LIMIT 1`,
+  args: [post.date, post.date, post.id],
+});
+const newer = newerRes.rows[0]
+  ? { slug: String(newerRes.rows[0].slug), data: { title: String(newerRes.rows[0].title) } }
+  : null;
+const older = olderRes.rows[0]
+  ? { slug: String(olderRes.rows[0].slug), data: { title: String(olderRes.rows[0].title) } }
+  : null;
+
+const date = new Date(post.date);
+const dateFmt = new Intl.DateTimeFormat("es-EC", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+}).format(date);
+
+const bodyHtml = renderBody(post.body);
+---
+
+<Layout
+  title={post.seoTitle ?? post.title}
+  description={post.seoDescription ?? post.excerpt ?? ""}
+  image={post.featuredImage ?? undefined}
+  type="article"
+>
+  <article>
+    <header class="pt-16 md:pt-24 pb-10 bg-bone-200">
+      <div class="container-site max-w-2xl md:max-w-3xl text-center">
+        {post.category && <p class="eyebrow">{post.category}</p>}
+        <h1 class="mt-4 font-serif text-4xl md:text-5xl lg:text-[3.4rem] font-medium text-ink leading-[1.1] tracking-tight">
+          {post.title}
+        </h1>
+        <div class="mt-7 mb-3 mx-auto h-px w-16 bg-gold"></div>
+        <div class="flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] text-ink-700/70">
+          <time datetime={date.toISOString()}>{dateFmt}</time>
+          {post.author && (<><span aria-hidden="true">·</span><span>{post.author}</span></>)}
+        </div>
+      </div>
+    </header>
+
+    {post.featuredImage && !post.videoEmbed && (
+      <div class="bg-bone-200 pt-2 pb-8">
+        <div class="container-site max-w-3xl">
+          <img src={post.featuredImage} alt={post.title} class="w-full h-auto rounded-sm shadow-soft" loading="eager" decoding="async" />
+        </div>
+      </div>
+    )}
+
+    <div class="pb-20 md:pb-28 bg-bone-200">
+      <div class="container-site max-w-2xl md:max-w-3xl">
+        {post.videoEmbed && (
+          <div class="mb-12">
+            <VideoEmbed youtube={post.videoEmbed} title={post.title} />
+          </div>
+        )}
+
+        <div class="prose-article" set:html={bodyHtml}></div>
+
+        <PostNav prev={older} next={newer} base="/blog" />
+
+        <div class="mt-8 pt-6 flex items-center justify-between">
+          <a href="/blog/" class="text-xs font-semibold uppercase tracking-widest text-gold hover:text-gold-dark">← Volver al blog</a>
+          <a href="/contacto/" class="text-xs font-semibold uppercase tracking-widest text-gold hover:text-gold-dark">Contáctenos →</a>
+        </div>
+      </div>
+    </div>
+
+    <RelatedPosts current={{ slug: post.slug, data: { category: post.category, type: post.type } }} />
+  </article>
+</Layout>

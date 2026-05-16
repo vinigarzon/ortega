@@ -1,0 +1,206 @@
+---
+/**
+ * /admin/posts — listado de publicaciones con filtros y paginación.
+ * Usa el design system de admin-ui.css.
+ */
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { db } from "@/lib/db";
+
+export const prerender = false;
+
+const url = Astro.url;
+const type = url.searchParams.get("type"); // 'blog' | 'videoteca' | null
+const category = url.searchParams.get("category");
+const draftOnly = url.searchParams.get("draft") === "1";
+const q = (url.searchParams.get("q") ?? "").trim();
+const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+const perPage = 25;
+const offset = (page - 1) * perPage;
+
+const where: string[] = [];
+const args: any[] = [];
+if (type === "blog" || type === "videoteca") { where.push("type = ?"); args.push(type); }
+if (category) { where.push("category = ?"); args.push(category); }
+if (draftOnly) { where.push("draft = 1"); }
+if (q) { where.push("title LIKE ?"); args.push(`%${q}%`); }
+const whereSql = where.length ? "WHERE " + where.join(" AND ") : "";
+
+const totalRes = await db.execute({ sql: `SELECT COUNT(*) AS n FROM posts ${whereSql}`, args });
+const total = Number((totalRes.rows[0] as any).n ?? 0);
+const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+const listRes = await db.execute({
+  sql: `SELECT slug, title, date, type, category, draft, featured_image
+        FROM posts ${whereSql}
+        ORDER BY date DESC, id DESC
+        LIMIT ? OFFSET ?`,
+  args: [...args, perPage, offset],
+});
+const posts = listRes.rows.map((r: any) => ({
+  slug: String(r.slug),
+  title: String(r.title),
+  date: String(r.date),
+  type: r.type === "videoteca" ? "videoteca" : "blog",
+  category: String(r.category ?? ""),
+  draft: Number(r.draft) === 1,
+  featuredImage: r.featured_image ?? null,
+}));
+
+const catsRes = await db.execute("SELECT DISTINCT category FROM posts ORDER BY category");
+const categories = catsRes.rows.map((r: any) => String(r.category));
+
+function fmtDate(s: string) {
+  try { return new Date(s).toLocaleDateString("es-EC", { day: "2-digit", month: "short", year: "numeric" }); }
+  catch { return s; }
+}
+function buildHref(overrides: Record<string, string | null>): string {
+  const p = new URLSearchParams(url.searchParams);
+  for (const [k, v] of Object.entries(overrides)) { if (v === null || v === "") p.delete(k); else p.set(k, v); }
+  return `/admin/posts${p.toString() ? "?" + p.toString() : ""}`;
+}
+const hasFilters = !!(type || category || draftOnly || q);
+---
+<AdminLayout title="Publicaciones" active="posts">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">Contenido</div>
+      <h1>Publicaciones</h1>
+      <p class="page-header__desc">Administra los artículos del blog y los videos de la videoteca.</p>
+    </div>
+    <div class="page-header__actions">
+      <a class="btn btn-primary" href="/admin/posts/new">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva publicación
+      </a>
+    </div>
+  </header>
+
+  <form class="filterbar card" method="GET" action="/admin/posts">
+    <div class="filterbar__search">
+      <svg viewBox="0 0 24 24" class="filterbar__search-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" name="q" class="input" placeholder="Buscar por título…" value={q} />
+    </div>
+    <select name="type" class="select">
+      <option value="">Todos los tipos</option>
+      <option value="blog" selected={type === "blog"}>Artículos (Blog)</option>
+      <option value="videoteca" selected={type === "videoteca"}>Videos (Videoteca)</option>
+    </select>
+    <select name="category" class="select">
+      <option value="">Todas las categorías</option>
+      {categories.map((c) => (<option value={c} selected={category === c}>{c}</option>))}
+    </select>
+    <label class="checkbox-row">
+      <input type="checkbox" name="draft" value="1" checked={draftOnly} />
+      Solo borradores
+    </label>
+    <div class="filterbar__buttons">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+      {hasFilters && (<a href="/admin/posts" class="btn btn-ghost">Limpiar</a>)}
+    </div>
+  </form>
+
+  <div class="results-meta">
+    <span><strong>{total}</strong> resultado{total === 1 ? "" : "s"}{hasFilters ? " con los filtros aplicados" : ""}</span>
+    {totalPages > 1 && <span>Página {page} de {totalPages}</span>}
+  </div>
+
+  <section class="card card-pad-0">
+    {posts.length === 0 ? (
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <h3>{hasFilters ? "Sin resultados" : "Aún no hay publicaciones"}</h3>
+        <p>{hasFilters ? "Prueba quitando algún filtro o usando otra búsqueda." : "Crea tu primera publicación para que aparezca aquí."}</p>
+        {hasFilters
+          ? <a class="btn btn-secondary" href="/admin/posts">Limpiar filtros</a>
+          : <a class="btn btn-primary" href="/admin/posts/new">Crear publicación</a>
+        }
+      </div>
+    ) : (
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-thumb"></th>
+            <th>Publicación</th>
+            <th>Tipo</th>
+            <th>Categoría</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map((p) => (
+            <tr>
+              <td>
+                <div class="dt-thumb">
+                  {p.featuredImage
+                    ? <img src={p.featuredImage} alt="" loading="lazy" />
+                    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
+                </div>
+              </td>
+              <td>
+                <a href={`/admin/posts/${p.slug}`} class="dt-title">{p.title}</a>
+                <div class="dt-slug">/{p.type === "videoteca" ? "videoteca" : "blog"}/{p.slug}</div>
+              </td>
+              <td><span class={`badge ${p.type === "videoteca" ? "badge-video" : "badge-blog"}`}>{p.type === "videoteca" ? "Video" : "Artículo"}</span></td>
+              <td class="dt-cell-muted">{p.category}</td>
+              <td class="dt-cell-muted">{fmtDate(p.date)}</td>
+              <td>{p.draft ? <span class="badge badge-draft">Borrador</span> : <span class="badge badge-pub">Publicado</span>}</td>
+              <td class="col-actions">
+                <div class="dt-row-actions">
+                  <a class="btn btn-ghost btn-sm" href={`/admin/posts/${p.slug}`}>Editar</a>
+                  <a class="btn btn-ghost btn-sm" href={`/${p.type === "videoteca" ? "videoteca" : "blog"}/${p.slug}/`} target="_blank" rel="noopener" title="Ver en el sitio">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </section>
+
+  {totalPages > 1 && (
+    <nav class="pager">
+      {page > 1
+        ? <a class="btn btn-secondary btn-sm" href={buildHref({ page: String(page - 1) })}>← Anterior</a>
+        : <span class="btn btn-secondary btn-sm" aria-disabled="true">← Anterior</span>}
+      <span class="pager-info">Página <strong>{page}</strong> de {totalPages}</span>
+      {page < totalPages
+        ? <a class="btn btn-secondary btn-sm" href={buildHref({ page: String(page + 1) })}>Siguiente →</a>
+        : <span class="btn btn-secondary btn-sm" aria-disabled="true">Siguiente →</span>}
+    </nav>
+  )}
+
+  <style>
+    .filterbar {
+      display: grid;
+      grid-template-columns: 1fr 200px 220px auto auto;
+      gap: 12px; align-items: center;
+      padding: 14px; margin-bottom: 16px;
+    }
+    .filterbar__search { position: relative; }
+    .filterbar__search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: var(--c-text-soft);
+    }
+    .filterbar__search .input { padding-left: 38px; }
+    .filterbar__buttons { display: flex; gap: 6px; }
+    @media (max-width: 900px) {
+      .filterbar { grid-template-columns: 1fr; }
+    }
+    .results-meta {
+      display: flex; justify-content: space-between;
+      font-size: 13px; color: var(--c-text-soft); margin-bottom: 12px;
+    }
+    .results-meta strong { color: var(--c-text); font-weight: 600; }
+    .pager {
+      margin-top: 20px; display: flex; gap: 12px;
+      align-items: center; justify-content: center;
+    }
+    .pager-info { font-size: 13px; color: var(--c-text-soft); }
+  </style>
+</AdminLayout>

@@ -1,0 +1,94 @@
+---
+/**
+ * Listado de la Videoteca con paginación (12 videos por página) — SSR + Turso.
+ */
+import Layout from "../../layouts/Layout.astro";
+import SectionTitle from "../../components/SectionTitle.astro";
+import BlogCard from "../../components/BlogCard.astro";
+import { listPosts, countPosts } from "@/lib/queries";
+
+export const prerender = false;
+
+const PAGE_SIZE = 12;
+const rawPage = Astro.params.page;
+const currentPage = Math.max(1, parseInt(String(rawPage ?? "1"), 10) || 1);
+
+const total = await countPosts({ type: "videoteca" });
+const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+if (currentPage > lastPage && total > 0) return Astro.redirect("/videoteca/");
+
+const offset = (currentPage - 1) * PAGE_SIZE;
+const posts = await listPosts({ type: "videoteca", limit: PAGE_SIZE, offset });
+
+const prevUrl =
+  currentPage > 1
+    ? currentPage - 1 === 1 ? "/videoteca/" : `/videoteca/${currentPage - 1}/`
+    : null;
+const nextUrl = currentPage < lastPage ? `/videoteca/${currentPage + 1}/` : null;
+---
+
+<Layout
+  title={currentPage > 1 ? `Videoteca — Página ${currentPage}` : "Videoteca"}
+  description="Videoteca de Ortega & Ortega Abogados — entrevistas, apariciones en medios y contenidos audiovisuales sobre temas legales y de actualidad."
+>
+  <section class="section bg-bone-200">
+    <div class="container-site">
+      <SectionTitle
+        eyebrow="Entrevistas y apariciones en medios"
+        title="Videoteca"
+        gold={true}
+      />
+
+      <p class="-mt-6 mb-10 mx-auto max-w-2xl text-center text-ink-700/85 leading-relaxed">
+        En esta sección reunimos entrevistas, conversaciones, apariciones en
+        medios y contenidos audiovisuales sobre temas legales, empresariales y
+        de actualidad. Es un espacio para conocer nuestras opiniones, análisis
+        y participación pública en diferentes plataformas.
+      </p>
+
+      {posts.length === 0 ? (
+        <p class="text-center text-ink/60">Aún no hay videos publicados.</p>
+      ) : (
+        <div class="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p) => (
+            <BlogCard
+              href={`/videoteca/${p.slug}/`}
+              title={p.title}
+              date={new Date(p.date)}
+              excerpt={p.excerpt ?? ""}
+              category={p.category}
+              featuredImage={p.featuredImage}
+              ctaLabel="Ver →"
+            />
+          ))}
+        </div>
+      )}
+
+      {lastPage > 1 && (
+        <nav class="mt-14 flex items-center justify-center gap-2" aria-label="Paginación">
+          {prevUrl ? (
+            <a href={prevUrl} class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/20 text-ink hover:border-gold hover:text-gold-dark" rel="prev">← Anterior</a>
+          ) : (
+            <span class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/10 text-ink/30 cursor-not-allowed">← Anterior</span>
+          )}
+
+          {Array.from({ length: lastPage }, (_, i) => i + 1).map((n) => {
+            const href = n === 1 ? "/videoteca/" : `/videoteca/${n}/`;
+            const active = n === currentPage;
+            return active ? (
+              <span aria-current="page" class="inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border border-ink bg-ink text-white">{n}</span>
+            ) : (
+              <a href={href} class="inline-flex items-center justify-center w-10 h-10 text-sm font-medium border border-ink/20 text-ink hover:border-gold hover:text-gold-dark">{n}</a>
+            );
+          })}
+
+          {nextUrl ? (
+            <a href={nextUrl} class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/20 text-ink hover:border-gold hover:text-gold-dark" rel="next">Siguiente →</a>
+          ) : (
+            <span class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/10 text-ink/30 cursor-not-allowed">Siguiente →</span>
+          )}
+        </nav>
+      )}
+    </div>
+  </section>
+</Layout>

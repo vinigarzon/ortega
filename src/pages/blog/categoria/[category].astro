@@ -1,0 +1,79 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import SectionTitle from "../../../components/SectionTitle.astro";
+import BlogCard from "../../../components/BlogCard.astro";
+import { listPosts, listCategories } from "@/lib/queries";
+
+export const prerender = false;
+
+const slugify = (c: string) =>
+  c
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const slugifyCat = (c: string) =>
+  encodeURIComponent(c.toLowerCase().replace(/\s+/g, "-"));
+
+const slug = Astro.params.category as string;
+const allCategories = (await listCategories("blog")).sort();
+
+// Encontrar la categoría real cuyo slug match
+const category = allCategories.find((c) => slugify(c) === slug);
+if (!category) return new Response(null, { status: 404 });
+
+const posts = await listPosts({ type: "blog", category });
+---
+
+<Layout
+  title={`Categoría: ${category}`}
+  description={`Publicaciones en la categoría ${category}.`}
+>
+  <section class="section bg-bone-200">
+    <div class="container-site">
+      <SectionTitle eyebrow="Categoría" title={category} gold={true} />
+
+      <div class="mb-10 flex flex-wrap items-center justify-center gap-2">
+        <a href="/blog/" class="text-[11px] font-semibold uppercase tracking-widest border border-ink/20 text-ink px-4 py-2 hover:border-gold hover:bg-gold hover:text-white transition-colors">
+          Todos
+        </a>
+        {allCategories.map((c) => {
+          const isActive = c === category;
+          return (
+            <a
+              href={`/blog/categoria/${slugifyCat(c)}/`}
+              class={
+                isActive
+                  ? "text-[11px] font-semibold uppercase tracking-widest border border-ink bg-ink text-white px-4 py-2"
+                  : "text-[11px] font-semibold uppercase tracking-widest border border-ink/20 text-ink px-4 py-2 hover:border-gold hover:bg-gold hover:text-white transition-colors"
+              }
+            >
+              {c}
+            </a>
+          );
+        })}
+      </div>
+
+      {posts.length === 0 ? (
+        <p class="text-center text-ink/60">
+          Sin publicaciones en esta categoría.
+        </p>
+      ) : (
+        <div class="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p) => (
+            <BlogCard
+              href={`/blog/${p.slug}/`}
+              title={p.title}
+              date={new Date(p.date)}
+              excerpt={p.excerpt ?? ""}
+              category={p.category}
+              featuredImage={p.featuredImage}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</Layout>

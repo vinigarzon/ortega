@@ -1,0 +1,108 @@
+---
+/**
+ * AdminLayout — shell global del panel.
+ *
+ * Carga el design system (admin-ui.css) y helpers (admin-ui.js).
+ * La página interna usa la clase utility `page-header` y los componentes
+ * documentados en admin-ui.css.
+ */
+interface Props {
+  title?: string;
+  active?: "dashboard" | "posts" | "lawyers" | "gallery" | "settings";
+}
+
+const { title = "Panel administrativo", active = "dashboard" } = Astro.props;
+const user = (Astro.locals as any).user as
+  | { email: string; userId: number; role: string }
+  | undefined;
+
+const navContent = [
+  { id: "dashboard", label: "Inicio",         href: "/admin/",         icon: "home" },
+  { id: "posts",     label: "Publicaciones",  href: "/admin/posts",    icon: "file" },
+  { id: "lawyers",   label: "Equipo",         href: "/admin/lawyers",  icon: "users" },
+  { id: "gallery",   label: "Galería",        href: "/admin/gallery",  icon: "image" },
+];
+const navConfig = [
+  { id: "settings", label: "Ajustes", href: "/admin/settings", icon: "cog" },
+];
+
+const icons: Record<string, string> = {
+  home:  '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-5h-2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  file:  '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  cog:   '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  ext:   '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+};
+
+const userInitial = (user?.email ?? "?").trim().charAt(0).toUpperCase();
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{title} — Ortega & Ortega Abogados</title>
+    <link rel="icon" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-ui.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="sb-brand">
+          <img src="/uploads/brand/logo-blanco.png" alt="Ortega & Ortega" onerror="this.onerror=null;this.src='/uploads/brand/icono.png'" />
+          <div class="sb-brand-text">
+            <strong>Ortega &amp; Ortega</strong>
+            <span>Panel administrativo</span>
+          </div>
+        </div>
+
+        <nav class="sb-nav" aria-label="Navegación del panel">
+          <div class="sb-section">Contenido</div>
+          {navContent.map((it) => (
+            <a href={it.href} class={`sb-link ${active === it.id ? "is-active" : ""}`} aria-current={active === it.id ? "page" : undefined}>
+              <svg viewBox="0 0 24 24" set:html={icons[it.icon]} />
+              <span>{it.label}</span>
+            </a>
+          ))}
+
+          <div class="sb-section">Configuración</div>
+          {navConfig.map((it) => (
+            <a href={it.href} class={`sb-link ${active === it.id ? "is-active" : ""}`} aria-current={active === it.id ? "page" : undefined}>
+              <svg viewBox="0 0 24 24" set:html={icons[it.icon]} />
+              <span>{it.label}</span>
+            </a>
+          ))}
+
+          <div style="flex:1"></div>
+
+          <a href="/" target="_blank" rel="noopener" class="sb-link sb-link-external">
+            <svg viewBox="0 0 24 24" set:html={icons.ext} />
+            <span>Ver sitio público</span>
+          </a>
+        </nav>
+
+        <div class="sb-user">
+          <div class="sb-avatar">{userInitial}</div>
+          <div class="sb-user-info">
+            <div class="email">{user?.email ?? "(sin sesión)"}</div>
+            <form method="POST" action="/api/admin/logout"><button type="submit">Cerrar sesión</button></form>
+          </div>
+        </div>
+      </aside>
+
+      <main class="app-main">
+        <slot />
+      </main>
+    </div>
+
+    <div id="toast-region"></div>
+
+    <script src="/admin-ui.js" is:inline></script>
+    <script src="/admin-uploader.js" is:inline></script>
+  </body>
+</html>

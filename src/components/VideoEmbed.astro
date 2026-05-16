@@ -1,0 +1,78 @@
+---
+/**
+ * VideoEmbed
+ * Renderiza un video usando la mejor fuente disponible:
+ *  1) Si `youtube` está presente, embebe el iframe de YouTube (recomendado).
+ *  2) Si solo hay `src` local (mp4/mov), renderiza el <video> nativo.
+ *
+ * El `youtube` puede ser:
+ *   - ID de 11 chars:  "dQw4w9WgXcQ"
+ *   - URL completa:    "https://youtu.be/dQw4w9WgXcQ"
+ *   - URL embed:       "https://www.youtube.com/embed/dQw4w9WgXcQ"
+ *   - URL watch:       "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+ *
+ * Cada video se muestra en una caja 16:9 responsive con clases Tailwind.
+ */
+interface Props {
+  /** YouTube URL o ID. Si está presente, gana sobre `src`. */
+  youtube?: string;
+  /** Ruta local de un archivo .mp4/.mov (ej. /uploads/wp/2023/06/video.mp4). */
+  src?: string;
+  /** Imagen de preview opcional para el <video> local. */
+  poster?: string;
+  /** Texto descriptivo para accesibilidad. */
+  title?: string;
+  /** Clases extra para el wrapper. */
+  class?: string;
+}
+
+const { youtube, src, poster, title = "Video", class: klass = "" } = Astro.props;
+
+function extractYouTubeId(input: string): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+  // Already a bare ID
+  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  const m = trimmed.match(
+    /(?:youtube\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+  );
+  return m ? m[1] : null;
+}
+
+const ytId = youtube ? extractYouTubeId(youtube) : null;
+const youtubeEmbed = ytId ? `https://www.youtube-nocookie.com/embed/${ytId}` : null;
+const wrapperClass = `video-embed relative w-full overflow-hidden rounded-md bg-ink ${klass}`.trim();
+---
+
+{
+  youtubeEmbed ? (
+    <div class={wrapperClass} style="aspect-ratio: 16 / 9;">
+      <iframe
+        src={youtubeEmbed}
+        title={title}
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        class="absolute inset-0 h-full w-full border-0"
+      />
+    </div>
+  ) : src ? (
+    <div class={wrapperClass} style="aspect-ratio: 16 / 9;">
+      <video
+        src={src}
+        poster={poster}
+        controls
+        preload="metadata"
+        playsinline
+        class="absolute inset-0 h-full w-full bg-black object-contain"
+      >
+        Tu navegador no soporta video HTML5.{" "}
+        <a href={src} class="underline text-gold-light">Descargar video</a>
+      </video>
+    </div>
+  ) : (
+    <div class="rounded-md bg-bone-50 p-4 text-sm text-ink/60">
+      Video no disponible.
+    </div>
+  )
+}

@@ -1,0 +1,480 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { getSetting } from "@/lib/queries";
+
+export const prerender = false;
+
+const site = (await getSetting<any>("site")) ?? { site: {} };
+const seo = (await getSetting<any>("seo")) ?? { seo: {} };
+const contact = (await getSetting<any>("contact")) ?? { contact: {}, social: {} };
+const footer = (await getSetting<any>("footer")) ?? { footer: {} };
+const homepage = (await getSetting<any>("homepage")) ?? { homepage: { hero: {}, sections: [], teamImage: "" } };
+
+const s = site.site ?? {};
+const se = seo.seo ?? {};
+const c = contact.contact ?? {};
+const sc = contact.social ?? {};
+const ft = footer.footer ?? {};
+const hp = homepage.homepage ?? { hero: {}, sections: [], teamImage: "" };
+if (!Array.isArray(hp.sections)) hp.sections = [];
+---
+<AdminLayout title="Ajustes" active="settings">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">Configuración</div>
+      <h1>Ajustes del sitio</h1>
+      <p class="page-header__desc">Información general, SEO, contacto y página de inicio.</p>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#site" class="is-active" data-tab="site">Identidad</a>
+    <a href="#seo" data-tab="seo">SEO</a>
+    <a href="#contact" data-tab="contact">Contacto</a>
+    <a href="#footer" data-tab="footer">Pie de página</a>
+    <a href="#homepage" data-tab="homepage">Página de inicio</a>
+  </nav>
+
+  {/* ============= IDENTIDAD ============= */}
+  <section class="tab-panel" id="site" data-key="site">
+    <div class="card card-pad-0">
+      <header class="card-header">
+        <div>
+          <h2>Identidad del sitio</h2>
+          <p>El nombre del despacho y los logos básicos.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label class="field-label">Nombre del sitio</label>
+            <input class="input" data-path="site.title" value={s.title ?? ""} placeholder="Ortega & Ortega Abogados" />
+          </div>
+          <div class="field">
+            <label class="field-label">Lema corto</label>
+            <input class="input" data-path="site.tagline" value={s.tagline ?? ""} placeholder="Asesoría legal integral" />
+          </div>
+          <div class="field">
+            <label class="field-label">Logo principal</label>
+            <input type="text" class="input" data-path="site.logo" name="logo" data-upload="1" value={s.logo ?? ""} placeholder="/uploads/brand/logo-horizontal.png" />
+          </div>
+          <div class="field">
+            <label class="field-label">Favicon (icono de pestaña)</label>
+            <input type="text" class="input" data-path="site.favicon" name="favicon" data-upload="1" value={s.favicon ?? ""} placeholder="/favicon.png" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <div class="save-bar__status">&nbsp;</div>
+      <button type="button" class="btn btn-primary save-section" data-key="site">Guardar identidad</button>
+    </div>
+  </section>
+
+  {/* ============= SEO ============= */}
+  <section class="tab-panel" id="seo" data-key="seo" hidden>
+    <div class="card card-pad-0">
+      <header class="card-header">
+        <div>
+          <h2>SEO global</h2>
+          <p>Texto que aparece en Google y al compartir el sitio en redes sociales.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="field">
+          <label class="field-label">Meta título</label>
+          <input class="input" data-path="seo.metaTitle" value={se.metaTitle ?? ""} />
+        </div>
+        <div class="field" style="margin-top: 16px;">
+          <label class="field-label">Meta descripción</label>
+          <textarea class="textarea" rows="3" data-path="seo.metaDescription">{se.metaDescription ?? ""}</textarea>
+        </div>
+        <div class="field" style="margin-top: 16px;">
+          <label class="field-label">Imagen para redes sociales (Open Graph)</label>
+          <input type="text" class="input" data-path="seo.ogImage" name="ogImage" data-upload="1" value={se.ogImage ?? ""} />
+        </div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <div class="save-bar__status">&nbsp;</div>
+      <button type="button" class="btn btn-primary save-section" data-key="seo">Guardar SEO</button>
+    </div>
+  </section>
+
+  {/* ============= CONTACTO ============= */}
+  <section class="tab-panel" id="contact" data-key="contact" hidden>
+    <div class="card card-pad-0">
+      <header class="card-header">
+        <div>
+          <h2>Datos de contacto</h2>
+          <p>Aparecen en el header, footer y página de contacto del sitio.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="form-grid form-grid-3">
+          <div class="field"><label class="field-label">Teléfono fijo</label><input class="input" data-path="contact.phone" value={c.phone ?? ""} /></div>
+          <div class="field"><label class="field-label">Móvil 1</label><input class="input" data-path="contact.mobile" value={c.mobile ?? ""} /></div>
+          <div class="field"><label class="field-label">Móvil 2</label><input class="input" data-path="contact.mobile2" value={c.mobile2 ?? ""} /></div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top: 14px;">
+          <div class="field"><label class="field-label">Email público</label><input type="email" class="input" data-path="contact.email" value={c.email ?? ""} /></div>
+          <div class="field"><label class="field-label">Email para leads (formulario)</label><input type="email" class="input" data-path="contact.leadEmail" value={c.leadEmail ?? ""} placeholder="leads@ortegaabogados.com" /></div>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">Dirección</label>
+          <textarea class="textarea" rows="2" data-path="contact.address">{c.address ?? ""}</textarea>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">URL de Google Maps (embed)</label>
+          <input class="input" data-path="contact.mapsEmbed" value={c.mapsEmbed ?? ""} placeholder="https://www.google.com/maps?q=...&output=embed" />
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">Enlace de WhatsApp</label>
+          <input class="input" data-path="contact.whatsapp" value={c.whatsapp ?? ""} placeholder="https://api.whatsapp.com/send/?phone=..." />
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-pad-0" style="margin-top: 16px;">
+      <header class="card-header">
+        <div>
+          <h2>Redes sociales</h2>
+          <p>Solo las que llenes aparecerán en el footer del sitio.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field"><label class="field-label">Twitter / X</label><input class="input" data-path="social.twitter" value={sc.twitter ?? ""} /></div>
+          <div class="field"><label class="field-label">Facebook</label><input class="input" data-path="social.facebook" value={sc.facebook ?? ""} /></div>
+          <div class="field"><label class="field-label">Instagram</label><input class="input" data-path="social.instagram" value={sc.instagram ?? ""} /></div>
+          <div class="field"><label class="field-label">LinkedIn</label><input class="input" data-path="social.linkedin" value={sc.linkedin ?? ""} /></div>
+          <div class="field"><label class="field-label">YouTube</label><input class="input" data-path="social.youtube" value={sc.youtube ?? ""} /></div>
+          <div class="field"><label class="field-label">TikTok</label><input class="input" data-path="social.tiktok" value={sc.tiktok ?? ""} /></div>
+        </div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <div class="save-bar__status">&nbsp;</div>
+      <button type="button" class="btn btn-primary save-section" data-key="contact">Guardar contacto y redes</button>
+    </div>
+  </section>
+
+  {/* ============= FOOTER ============= */}
+  <section class="tab-panel" id="footer" data-key="footer" hidden>
+    <div class="card card-pad-0">
+      <header class="card-header">
+        <div>
+          <h2>Pie de página</h2>
+          <p>Texto que aparece al fondo de todas las páginas.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="field">
+          <label class="field-label">Texto de copyright</label>
+          <input class="input" data-path="footer.copyright" value={ft.copyright ?? ""} placeholder="© 2026 Ortega & Ortega Abogados" />
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">Texto adicional</label>
+          <textarea class="textarea" rows="3" data-path="footer.text">{ft.text ?? ""}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <div class="save-bar__status">&nbsp;</div>
+      <button type="button" class="btn btn-primary save-section" data-key="footer">Guardar pie de página</button>
+    </div>
+  </section>
+
+  {/* ============= HOMEPAGE ============= */}
+  <section class="tab-panel" id="homepage" data-key="homepage" hidden>
+    {/* HERO */}
+    <div class="card card-pad-0">
+      <header class="card-header">
+        <div>
+          <h2>Banner principal (Hero)</h2>
+          <p>El bloque grande con la imagen de fondo que aparece al inicio de la home.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label class="field-label">Título</label>
+            <input class="input" data-path="homepage.hero.title" value={hp.hero?.title ?? ""} />
+          </div>
+          <div class="field">
+            <label class="field-label">Subtítulo</label>
+            <input class="input" data-path="homepage.hero.subtitle" value={hp.hero?.subtitle ?? ""} />
+          </div>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">Imagen de fondo</label>
+          <input type="text" class="input" data-path="homepage.hero.backgroundImage" name="backgroundImage" data-upload="1" value={hp.hero?.backgroundImage ?? ""} />
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top: 14px;">
+          <div class="field"><label class="field-label">Texto del botón</label><input class="input" data-path="homepage.hero.buttonText" value={hp.hero?.buttonText ?? ""} /></div>
+          <div class="field"><label class="field-label">Enlace del botón</label><input class="input" data-path="homepage.hero.buttonLink" value={hp.hero?.buttonLink ?? ""} /></div>
+        </div>
+      </div>
+    </div>
+
+    {/* IMAGEN GRUPAL */}
+    <div class="card card-pad-0" style="margin-top: 16px;">
+      <header class="card-header">
+        <div>
+          <h2>Imagen grupal del equipo</h2>
+          <p>Foto ancha que aparece debajo de "Misión y Visión", antes de las cards del equipo.</p>
+        </div>
+      </header>
+      <div class="card-body">
+        <input type="text" class="input" data-path="homepage.teamImage" name="teamImage" data-upload="1" value={hp.teamImage || "/uploads/team/equipo-grupal.jpg"} placeholder="/uploads/team/equipo-grupal.jpg" />
+      </div>
+    </div>
+
+    {/* SECCIONES */}
+    <div class="card card-pad-0" style="margin-top: 16px;">
+      <header class="card-header">
+        <div>
+          <h2>Secciones de contenido</h2>
+          <p>Bloques editables de la home (Historia, Misión, Valores, Fortalezas…).</p>
+        </div>
+        <button type="button" class="btn btn-secondary" id="addSection">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Añadir sección
+        </button>
+      </header>
+      <div class="card-body sections-area">
+        <ol id="sectionsList" class="sections-list">
+          {hp.sections.map((sec: any) => (
+            <li class="accordion" data-section>
+              <div class="accordion__head">
+                <div class="accordion__icon tone-navy">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </div>
+                <div class="accordion__title">
+                  <strong class="sec-display-title">{sec.title || "(Sin título)"}</strong>
+                  <p>ID: <code>{sec.id || "—"}</code></p>
+                </div>
+                <div class="section-controls">
+                  <button type="button" class="btn btn-ghost btn-icon up" title="Subir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+                  <button type="button" class="btn btn-ghost btn-icon down" title="Bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                  <button type="button" class="btn btn-danger-ghost btn-icon del" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </div>
+                <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="accordion__body">
+                <div class="form-grid form-grid-3">
+                  <div class="field">
+                    <label class="field-label">ID (ancla)</label>
+                    <input type="text" class="input sec-id" value={sec.id ?? ""} placeholder="historia" />
+                    <small class="field-help">Sin espacios. Ej: historia, mision</small>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Antetítulo</label>
+                    <input type="text" class="input sec-eyebrow" value={sec.eyebrow ?? ""} placeholder="IDENTIDAD" />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Título</label>
+                    <input type="text" class="input sec-title" value={sec.title ?? ""} placeholder="HISTORIA" />
+                  </div>
+                </div>
+                <div class="field" style="margin-top: 14px;">
+                  <label class="field-label">Texto del bloque</label>
+                  <textarea rows="4" class="textarea sec-body">{sec.body ?? ""}</textarea>
+                  <small class="field-help">Soporta **negrita** y *cursiva*.</small>
+                </div>
+                <div class="field" style="margin-top: 14px;">
+                  <label class="field-label">Lista de ítems (uno por línea, opcional)</label>
+                  <textarea rows="3" class="textarea sec-list" placeholder="Honestidad&#10;Compromiso&#10;Excelencia">{(sec.list ?? []).join("\n")}</textarea>
+                </div>
+                <input type="hidden" class="sec-image" value={sec.image ?? ""} />
+                <div class="form-grid form-grid-2" style="margin-top: 14px;">
+                  <div class="field">
+                    <label class="field-label">Texto del botón (opcional)</label>
+                    <input type="text" class="input sec-cta-text" value={sec.cta?.text ?? ""} />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Enlace del botón</label>
+                    <input type="text" class="input sec-cta-link" value={sec.cta?.link ?? ""} />
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+        {hp.sections.length === 0 && (
+          <div class="empty-state">
+            <div class="empty-state__icon">
+              <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </div>
+            <h3>Sin secciones</h3>
+            <p>Las secciones son bloques de contenido que aparecen en la página de inicio.</p>
+            <button type="button" class="btn btn-primary" id="addSection2">Añadir primera sección</button>
+          </div>
+        )}
+      </div>
+    </div>
+    <div class="save-bar">
+      <div class="save-bar__status">&nbsp;</div>
+      <button type="button" class="btn btn-primary save-section" data-key="homepage">Guardar página de inicio</button>
+    </div>
+  </section>
+
+  <style>
+    .tab-panel { display: block; }
+    .tab-panel[hidden] { display: none; }
+    .section-controls { display: flex; gap: 4px; margin-right: 8px; }
+    .section-controls .btn { padding: 6px; min-width: 30px; min-height: 30px; }
+    .section-controls svg { width: 14px; height: 14px; }
+    .sections-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .sections-area { padding-top: 14px; }
+  </style>
+
+  <script is:inline>
+  (function () {
+    /* ===== Tabs ===== */
+    const tabs = document.querySelectorAll(".tabs a");
+    const panels = document.querySelectorAll(".tab-panel");
+    function show(id) {
+      tabs.forEach((t) => t.classList.toggle("is-active", t.dataset.tab === id));
+      panels.forEach((p) => { if (p.id === id) p.removeAttribute("hidden"); else p.setAttribute("hidden", ""); });
+    }
+    tabs.forEach((t) => t.addEventListener("click", (e) => { e.preventDefault(); show(t.dataset.tab); history.replaceState(null, "", "#" + t.dataset.tab); }));
+    const initial = (location.hash || "#site").slice(1);
+    show(["site","seo","contact","footer","homepage"].includes(initial) ? initial : "site");
+
+    /* ===== Helpers ===== */
+    function setIn(obj, path, val) {
+      const parts = path.split(".");
+      let cur = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (typeof cur[parts[i]] !== "object" || cur[parts[i]] === null) cur[parts[i]] = {};
+        cur = cur[parts[i]];
+      }
+      cur[parts[parts.length - 1]] = val;
+    }
+
+    /* ===== Sections (home) ===== */
+    const sectionsList = document.getElementById("sectionsList");
+    function bindSection(li) {
+      li.querySelector(".up").onclick = (e) => { e.stopPropagation(); const p = li.previousElementSibling; if (p) sectionsList.insertBefore(li, p); };
+      li.querySelector(".down").onclick = (e) => { e.stopPropagation(); const n = li.nextElementSibling; if (n) sectionsList.insertBefore(n, li); };
+      li.querySelector(".del").onclick = async (e) => {
+        e.stopPropagation();
+        const ok = await window.confirmDialog({ title: "¿Eliminar esta sección?", message: "Se quita de la home al guardar.", confirmLabel: "Eliminar" });
+        if (ok) li.remove();
+      };
+      // Actualizar título visible cuando cambie el campo título
+      const titleField = li.querySelector(".sec-title");
+      const idField = li.querySelector(".sec-id");
+      const displayTitle = li.querySelector(".sec-display-title");
+      const displayId = li.querySelector("code");
+      if (titleField) titleField.addEventListener("input", () => displayTitle.textContent = titleField.value || "(Sin título)");
+      if (idField) idField.addEventListener("input", () => displayId.textContent = idField.value || "—");
+    }
+    sectionsList?.querySelectorAll(".accordion").forEach(bindSection);
+
+    function addSection() {
+      const li = document.createElement("li");
+      li.className = "accordion is-open";
+      li.setAttribute("data-section", "");
+      li.innerHTML = `
+        <div class="accordion__head">
+          <div class="accordion__icon tone-navy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </div>
+          <div class="accordion__title">
+            <strong class="sec-display-title">(Sin título)</strong>
+            <p>ID: <code>—</code></p>
+          </div>
+          <div class="section-controls">
+            <button type="button" class="btn btn-ghost btn-icon up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button type="button" class="btn btn-ghost btn-icon down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <button type="button" class="btn btn-danger-ghost btn-icon del"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+          <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="accordion__body">
+          <div class="form-grid form-grid-3">
+            <div class="field"><label class="field-label">ID (ancla)</label><input type="text" class="input sec-id" placeholder="historia"><small class="field-help">Sin espacios.</small></div>
+            <div class="field"><label class="field-label">Antetítulo</label><input type="text" class="input sec-eyebrow"></div>
+            <div class="field"><label class="field-label">Título</label><input type="text" class="input sec-title"></div>
+          </div>
+          <div class="field" style="margin-top:14px"><label class="field-label">Texto del bloque</label><textarea rows="4" class="textarea sec-body"></textarea></div>
+          <div class="field" style="margin-top:14px"><label class="field-label">Lista de ítems</label><textarea rows="3" class="textarea sec-list"></textarea></div>
+          <input type="hidden" class="sec-image" value="">
+          <div class="form-grid form-grid-2" style="margin-top:14px">
+            <div class="field"><label class="field-label">Texto del botón</label><input type="text" class="input sec-cta-text"></div>
+            <div class="field"><label class="field-label">Enlace</label><input type="text" class="input sec-cta-link"></div>
+          </div>
+        </div>
+      `;
+      sectionsList.appendChild(li);
+      bindSection(li);
+    }
+    document.getElementById("addSection")?.addEventListener("click", addSection);
+    document.getElementById("addSection2")?.addEventListener("click", addSection);
+
+    function readSections() {
+      return [...sectionsList.querySelectorAll(".accordion[data-section]")].map((li) => {
+        const ctaText = li.querySelector(".sec-cta-text").value.trim();
+        const ctaLink = li.querySelector(".sec-cta-link").value.trim();
+        const listRaw = li.querySelector(".sec-list").value.split("\n").map((l) => l.trim()).filter(Boolean);
+        const obj = {
+          id: li.querySelector(".sec-id").value.trim(),
+          eyebrow: li.querySelector(".sec-eyebrow").value.trim(),
+          title: li.querySelector(".sec-title").value.trim(),
+          body: li.querySelector(".sec-body").value,
+          image: li.querySelector(".sec-image").value.trim(),
+          list: listRaw,
+        };
+        if (ctaText || ctaLink) obj.cta = { text: ctaText, link: ctaLink };
+        return obj;
+      }).filter((s) => s.id || s.title);
+    }
+
+    /* ===== Save logic ===== */
+    document.querySelectorAll(".save-section").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.key;
+        const panel = document.querySelector(`.tab-panel[data-key="${key}"]`);
+        // El save-bar puede estar adentro o como último hijo del panel
+        const statusEl = panel.querySelector(".save-bar__status") ||
+                         panel.parentNode.querySelector(`.tab-panel[data-key="${key}"] .save-bar__status`);
+
+        const payload = {};
+        panel.querySelectorAll("[data-path]").forEach((el) => setIn(payload, el.dataset.path, el.value));
+        if (key === "homepage") setIn(payload, "homepage.sections", readSections());
+
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = "Guardando…";
+        try {
+          const res = await fetch(`/api/admin/settings/${key}`, {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            if (statusEl) statusEl.innerHTML = `<span class="err">●</span> ${data.error || "Error al guardar"}`;
+            window.toast && toast("error", "No se pudo guardar");
+          } else {
+            if (statusEl) statusEl.innerHTML = `<span class="ok">✓</span> Guardado`;
+            window.toast && toast("success", "Cambios guardados");
+          }
+        } catch {
+          if (statusEl) statusEl.innerHTML = `<span class="err">●</span> Error de red`;
+          window.toast && toast("error", "Error de red");
+        } finally { btn.disabled = false; btn.textContent = origText; }
+      });
+    });
+
+    /* Hacer que el accordion__head no toggle si se hace click en un control */
+    document.querySelectorAll(".accordion__head").forEach((head) => {
+      head.addEventListener("click", (e) => {
+        if (e.target.closest(".section-controls")) return;
+      }, true);
+    });
+  })();
+  </script>
+</AdminLayout>
+

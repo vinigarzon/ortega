@@ -1,0 +1,27 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import PostEditor from "@/components/admin/PostEditor.astro";
+import { getPostBySlug, listCategories } from "@/lib/queries";
+
+export const prerender = false;
+
+const slug = Astro.params.slug as string;
+const post = await getPostBySlug(slug);
+if (!post) return Astro.redirect("/admin/posts");
+
+const dbCats = await listCategories();
+const fixed = ["Entrevistas", "Legal", "Deportes", "Ponencias"];
+const categories = Array.from(new Set([...fixed, ...dbCats])).sort();
+---
+<AdminLayout title={`Editar — ${post.title}`} active="posts">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">
+        <a href="/admin/posts">Publicaciones</a> · Editar
+      </div>
+      <h1>{post.title}</h1>
+      <p class="page-header__desc">Los cambios se publican al instante en el sitio público.</p>
+    </div>
+  </header>
+  <PostEditor mode="edit" post={post} categories={categories} />
+</AdminLayout>

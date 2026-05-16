@@ -1,0 +1,662 @@
+---
+/**
+ * Editor de publicación — diseño 2 columnas con FormSections, Quill,
+ * sticky save bar, toast feedback, confirm dialog para delete.
+ *
+ * Estilos: todos en clases del design system (admin-ui.css), nada inline.
+ */
+import type { Post } from "@/lib/queries";
+
+interface Props {
+  post?: Post;
+  mode: "create" | "edit";
+  categories: string[];
+}
+const { post, mode, categories } = Astro.props;
+
+const initial = {
+  title: post?.title ?? "",
+  slug: post?.slug ?? "",
+  date: post?.date ?? new Date().toISOString().slice(0, 10),
+  type: post?.type ?? "blog",
+  category: post?.category ?? "Entrevistas",
+  tags: post?.tags ?? [],
+  excerpt: post?.excerpt ?? "",
+  body: post?.body ?? "",
+  featuredImage: post?.featuredImage ?? "",
+  videoEmbed: post?.videoEmbed ?? "",
+  author: post?.author ?? "Ortega & Ortega Abogados",
+  seoTitle: post?.seoTitle ?? "",
+  seoDescription: post?.seoDescription ?? "",
+  draft: post?.draft ?? false,
+};
+---
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" />
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js" is:inline></script>
+
+<form id="postForm" class="editor-form" data-mode={mode} data-original-slug={post?.slug ?? ""}>
+  <div class="editor-grid">
+
+    {/* ============ MAIN COLUMN ============ */}
+    <div class="editor-main card card-pad-0">
+
+      <div class="form-section">
+        <div class="form-section__head">
+          <h3>Información principal</h3>
+          <p>Cómo se llama y a qué URL pertenece esta publicación.</p>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="title">Título</label>
+            <input id="title" name="title" type="text" class="input input-display" required value={initial.title} placeholder="Escribe un título descriptivo…" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="slug">Dirección (URL)</label>
+            <div class="input-with-prefix">
+              <span class="prefix" id="slugPrefix">/{initial.type === "videoteca" ? "videoteca" : "blog"}/</span>
+              <input id="slug" name="slug" type="text" class="input" value={initial.slug} placeholder="se-genera-automaticamente" />
+              <span class="suffix">/</span>
+            </div>
+            <small class="field-help">Si lo dejas vacío, se genera a partir del título.</small>
+          </div>
+          <div class="field">
+            <label class="field-label" for="excerpt">Resumen corto</label>
+            <textarea id="excerpt" name="excerpt" class="textarea" rows="2" placeholder="Una o dos frases que aparezcan en la card del listado…">{initial.excerpt}</textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="videoEmbed">Video de YouTube (opcional)</label>
+            <input id="videoEmbed" name="videoEmbed" type="text" class="input" value={initial.videoEmbed} placeholder="https://youtu.be/... o https://www.youtube.com/watch?v=..." />
+            <small class="field-help">💡 Si pegas un link de YouTube, la publicación se convierte automáticamente en <strong>Videoteca</strong> y se carga la imagen del video como portada.</small>
+            <div id="ytStatus" class="yt-status" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section__head">
+          <h3>Contenido</h3>
+          <p>Escribe el cuerpo del artículo. Usa los botones de la barra para dar formato.</p>
+        </div>
+        <div id="quill-toolbar" class="ql-toolbar-custom">
+          <span class="ql-formats">
+            <select class="ql-header" title="Estilo de párrafo">
+              <option selected></option>
+              <option value="2">Subtítulo</option>
+              <option value="3">Sub-subtítulo</option>
+            </select>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-bold" title="Negrita (⌘B)"></button>
+            <button class="ql-italic" title="Cursiva (⌘I)"></button>
+            <button class="ql-underline" title="Subrayado (⌘U)"></button>
+            <button class="ql-strike" title="Tachado"></button>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-list" value="ordered" title="Lista numerada"></button>
+            <button class="ql-list" value="bullet" title="Lista con viñetas"></button>
+            <button class="ql-blockquote" title="Cita"></button>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-link" title="Insertar enlace"></button>
+            <button class="ql-image" title="Insertar imagen"></button>
+            <button class="ql-video" title="Insertar video"></button>
+          </span>
+          <span class="ql-formats">
+            <button class="ql-clean" title="Limpiar formato"></button>
+          </span>
+        </div>
+        <div id="editor-host"></div>
+        <input type="hidden" id="body" name="body" value={initial.body} />
+      </div>
+
+      <details class="form-section seo-section">
+        <summary class="seo-toggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <strong>SEO (avanzado)</strong>
+          <span>Personaliza cómo aparece esta página en Google y al compartir en redes</span>
+        </summary>
+        <div class="form-grid" style="margin-top: 16px;">
+          <div class="field">
+            <label class="field-label" for="seoTitle">Título SEO</label>
+            <input id="seoTitle" name="seoTitle" type="text" class="input" value={initial.seoTitle} placeholder="Si lo dejas vacío usa el título principal" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="seoDescription">Descripción SEO</label>
+            <textarea id="seoDescription" name="seoDescription" class="textarea" rows="2" placeholder="Si lo dejas vacío usa el resumen corto">{initial.seoDescription}</textarea>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    {/* ============ SIDE COLUMN ============ */}
+    <aside class="editor-side">
+      <div class="card">
+        <h4 class="side-head">Publicación</h4>
+        <div class="field">
+          <label class="field-label" for="type">Tipo</label>
+          <select id="type" name="type" class="select">
+            <option value="blog" selected={initial.type === "blog"}>📄 Blog (artículo)</option>
+            <option value="videoteca" selected={initial.type === "videoteca"}>🎥 Videoteca (video)</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label" for="category">Categoría</label>
+          <div class="combo" id="catCombo" data-categories={JSON.stringify(categories)}>
+            <input id="category" name="category" type="text" class="input" value={initial.category} placeholder="Elegir o escribir…" autocomplete="off" />
+            <button type="button" class="combo-toggle" aria-label="Mostrar opciones">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="combo-list" hidden></ul>
+          </div>
+          <small class="field-help">Elige una de la lista o escribe una nueva para crearla.</small>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="field-label">Etiquetas (tags)</label>
+          <div id="tagsBox" class="tags-box">
+            {initial.tags.map((t) => (
+              <span class="tag-chip" data-tag={t}>{t}<button type="button" class="tag-remove" aria-label="Quitar">×</button></span>
+            ))}
+            <input type="text" id="tagInput" class="tag-input" placeholder="Añadir y Enter…" />
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top: 14px;">
+          <div class="field">
+            <label class="field-label" for="date">Fecha</label>
+            <input id="date" name="date" type="date" class="input" value={initial.date} />
+          </div>
+          <div class="field">
+            <label class="field-label" for="author">Autor</label>
+            <input id="author" name="author" type="text" class="input" value={initial.author} />
+          </div>
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label class="checkbox-row">
+            <input type="checkbox" name="draft" id="draft" checked={initial.draft} />
+            <span>Guardar como borrador (no visible en el sitio)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4 class="side-head">Imagen destacada</h4>
+        <input id="featuredImage" name="featuredImage" type="text" data-upload="1" value={initial.featuredImage} placeholder="Subir o pegar URL…" />
+        <small class="field-help" style="display:block; margin-top: 8px;">Se genera automáticamente si pegas un video de YouTube. Puedes reemplazarla.</small>
+      </div>
+
+      {post && (
+        <div class="card danger-zone">
+          <h4 class="side-head">Zona destructiva</h4>
+          <p class="danger-help">Eliminar esta publicación es permanente. La URL pública dejará de funcionar.</p>
+          <button type="button" class="btn btn-danger-ghost" id="deleteBtn">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar publicación
+          </button>
+        </div>
+      )}
+    </aside>
+  </div>
+
+  {/* ============ STICKY SAVE BAR ============ */}
+  <div class="save-bar">
+    <div class="save-bar__status" id="saveStatus">{mode === "edit" ? "Sin cambios pendientes" : "Aún sin guardar"}</div>
+    <a class="btn btn-ghost" href="/admin/posts">Cancelar</a>
+    {post && (
+      <a class="btn btn-secondary" href={`/${post.type === "videoteca" ? "videoteca" : "blog"}/${post.slug}/`} target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Vista previa
+      </a>
+    )}
+    <button type="submit" class="btn btn-primary" id="saveBtn">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      {mode === "create" ? "Crear publicación" : "Guardar cambios"}
+    </button>
+  </div>
+
+  <style>
+    .editor-grid {
+      display: grid; grid-template-columns: 1fr 340px; gap: 24px;
+      align-items: flex-start;
+    }
+    .editor-main { padding: 0; overflow: hidden; }
+    .editor-side { display: flex; flex-direction: column; gap: 16px; }
+    .editor-side .card { padding: 18px 20px; }
+    .side-head {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--c-text-soft); font-weight: 600; margin: 0 0 14px;
+    }
+
+    /* YouTube auto-detect status */
+    .yt-status {
+      margin-top: 8px; padding: 10px 12px; border-radius: var(--r-md);
+      background: var(--c-success-bg); color: var(--c-success);
+      font-size: 12.5px; display: flex; align-items: center; gap: 10px;
+    }
+    .yt-status[hidden] { display: none; }
+    .yt-status img { width: 64px; height: 36px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+    .yt-status strong { font-weight: 600; }
+
+    /* Quill */
+    #quill-toolbar.ql-toolbar-custom {
+      border: 1px solid var(--c-border); border-radius: var(--r-md) var(--r-md) 0 0;
+      border-bottom: 0; background: var(--c-surface-2);
+    }
+    #editor-host {
+      border: 1px solid var(--c-border); border-radius: 0 0 var(--r-md) var(--r-md);
+      background: #fff; min-height: 360px;
+    }
+    #editor-host .ql-editor {
+      font-family: "Lora", "Cormorant Garamond", Georgia, serif;
+      font-size: 16px; line-height: 1.7;
+      padding: 22px 24px; min-height: 360px;
+    }
+    #editor-host .ql-editor h2 { font-family: var(--f-display); font-size: 26px; margin-top: 24px; font-weight: 600; }
+    #editor-host .ql-editor h3 { font-family: var(--f-display); font-size: 20px; margin-top: 18px; font-weight: 600; }
+    #editor-host .ql-editor blockquote {
+      border-left: 3px solid var(--c-accent); padding-left: 16px;
+      color: var(--c-text-dim); font-style: italic;
+    }
+    .ql-snow .ql-tooltip { z-index: 100; }
+
+    /* SEO accordion */
+    .seo-section { border-top: 1px solid var(--c-border-soft); padding: 0; }
+    .seo-toggle {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 24px;
+      cursor: pointer; user-select: none;
+      list-style: none;
+    }
+    .seo-toggle::-webkit-details-marker { display: none; }
+    .seo-toggle svg { width: 18px; height: 18px; color: var(--c-text-soft); transition: transform var(--tr-base); }
+    .seo-section[open] .seo-toggle svg { transform: rotate(180deg); }
+    .seo-toggle strong { font-family: var(--f-display); font-size: 18px; color: var(--c-text); font-weight: 600; }
+    .seo-toggle span { color: var(--c-text-soft); font-size: 12.5px; }
+    .seo-section[open] { padding: 0 24px 24px; }
+
+    /* Combobox de categoría */
+    .combo { position: relative; }
+    .combo .input { padding-right: 36px !important; }
+    .combo-toggle {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border: 0; background: transparent;
+      color: var(--c-text-soft); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .combo-toggle:hover { color: var(--c-primary); }
+    .combo-toggle svg { width: 14px; height: 14px; }
+    .combo-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--r-md); box-shadow: var(--sh-lg);
+      list-style: none; padding: 4px; margin: 0;
+      z-index: 50; max-height: 240px; overflow-y: auto;
+    }
+    .combo-list[hidden] { display: none; }
+    .combo-list li {
+      padding: 8px 12px; border-radius: var(--r-sm); cursor: pointer;
+      font-size: 13.5px;
+    }
+    .combo-list li:hover, .combo-list li.active { background: var(--c-surface-2); }
+    .combo-list li.new {
+      color: var(--c-primary); font-weight: 500;
+      border-top: 1px solid var(--c-border-soft); margin-top: 4px; padding-top: 10px;
+    }
+    .combo-list li.new::before { content: "+ "; color: var(--c-accent); font-weight: 700; }
+
+    /* Tags */
+    .tags-box {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 6px;
+      border: 1px solid var(--c-border); border-radius: var(--r-md);
+      background: var(--c-surface); min-height: 42px;
+      transition: border-color var(--tr-fast), box-shadow var(--tr-fast);
+    }
+    .tags-box:focus-within { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(67,76,140,.12); }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--c-accent-bg); color: var(--c-accent-d);
+      padding: 3px 4px 3px 10px; border-radius: var(--r-full);
+      font-size: 12px; font-weight: 500;
+    }
+    .tag-remove {
+      width: 18px; height: 18px; border-radius: var(--r-full); border: 0;
+      background: transparent; color: var(--c-accent-d);
+      font-size: 16px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tag-remove:hover { background: rgba(173,156,59,.2); }
+    .tag-input {
+      border: 0; outline: 0; flex: 1; min-width: 120px;
+      font-family: inherit; font-size: 13px; background: transparent;
+      padding: 4px 6px;
+    }
+
+    /* Danger zone */
+    .danger-zone { border-color: var(--c-danger-bg) !important; background: linear-gradient(180deg, #fef7f7 0%, var(--c-surface) 100%); }
+    .danger-help { font-size: 12.5px; color: var(--c-text-dim); margin-bottom: 12px; }
+
+    @media (max-width: 1100px) {
+      .editor-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script is:inline>
+  (function init() {
+    if (typeof window.Quill === "undefined") return setTimeout(init, 50);
+    const Quill = window.Quill;
+
+    const form = document.getElementById("postForm");
+    const titleEl = document.getElementById("title");
+    const slugEl = document.getElementById("slug");
+    const slugPrefix = document.getElementById("slugPrefix");
+    const saveBtn = document.getElementById("saveBtn");
+    const saveStatus = document.getElementById("saveStatus");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const bodyInput = document.getElementById("body");
+    const featured = document.getElementById("featuredImage");
+    const typeSel = document.getElementById("type");
+
+    const mode = form.dataset.mode;
+    const originalSlug = form.dataset.originalSlug;
+    let dirty = false;
+
+    function markDirty() {
+      if (!dirty) {
+        dirty = true;
+        saveStatus.innerHTML = `<span class="err">●</span> Hay cambios sin guardar`;
+      }
+    }
+    function markSaved() {
+      dirty = false;
+      saveStatus.innerHTML = `<span class="ok">✓</span> Guardado`;
+    }
+
+    function slugify(s) {
+      return String(s || "")
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .toLowerCase().replace(/[^a-z0-9\s-]/g, "")
+        .trim().replace(/[\s_]+/g, "-").replace(/-+/g, "-");
+    }
+
+    // Auto-slug
+    let slugTouched = !!slugEl.value;
+    slugEl.addEventListener("input", () => { slugTouched = true; markDirty(); });
+    titleEl.addEventListener("input", () => {
+      if (!slugTouched && mode === "create") slugEl.value = slugify(titleEl.value);
+      markDirty();
+    });
+    typeSel.addEventListener("change", () => {
+      slugPrefix.textContent = "/" + (typeSel.value === "videoteca" ? "videoteca" : "blog") + "/";
+      markDirty();
+    });
+
+    // ===== Auto-detect de YouTube =====
+    const videoEmbed = document.getElementById("videoEmbed");
+    const ytStatus = document.getElementById("ytStatus");
+
+    function extractYouTubeId(url) {
+      if (!url) return null;
+      const patterns = [
+        /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/(?:watch\?v=|embed\/|live\/|shorts\/|v\/)([a-zA-Z0-9_-]{11})/,
+        /i\.ytimg\.com\/vi\/([a-zA-Z0-9_-]{11})\//,
+      ];
+      for (const p of patterns) {
+        const m = String(url).match(p);
+        if (m) return m[1];
+      }
+      return null;
+    }
+
+    const excerptEl = document.getElementById("excerpt");
+    let lastFetchedId = null;
+
+    async function applyYouTube(url) {
+      const id = extractYouTubeId(url);
+      if (!id) { ytStatus.hidden = true; return; }
+
+      const thumb = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+      // 1) Cambiar tipo a videoteca si no lo está ya
+      if (typeSel.value !== "videoteca") {
+        typeSel.value = "videoteca";
+        slugPrefix.textContent = "/videoteca/";
+      }
+      // 2) Cargar thumb como featuredImage
+      featured.value = thumb;
+      featured.dispatchEvent(new Event("input", { bubbles: true }));
+      featured.dispatchEvent(new Event("change", { bubbles: true }));
+      // 3) Feedback visual inicial
+      ytStatus.hidden = false;
+      ytStatus.innerHTML = `
+        <img src="${thumb}" alt="">
+        <span><strong>Detectado video de YouTube</strong> · obteniendo título y resumen…</span>
+      `;
+      markDirty();
+
+      // 4) Si es un ID nuevo, fetchear oEmbed para sugerencias de título/resumen
+      if (id === lastFetchedId) return;
+      lastFetchedId = id;
+      try {
+        const r = await fetch(`/api/admin/youtube-info?url=${encodeURIComponent(url)}`);
+        if (!r.ok) return;
+        const info = await r.json();
+        if (!info.ok) return;
+
+        let filled = [];
+        // Solo rellenar si los campos están vacíos
+        if (!titleEl.value.trim() && info.suggestedTitle) {
+          titleEl.value = info.suggestedTitle;
+          titleEl.dispatchEvent(new Event("input", { bubbles: true }));
+          filled.push("título");
+        }
+        if (excerptEl && !excerptEl.value.trim() && info.suggestedExcerpt) {
+          excerptEl.value = info.suggestedExcerpt;
+          excerptEl.dispatchEvent(new Event("input", { bubbles: true }));
+          filled.push(info.aiUsed ? "resumen (IA)" : "resumen");
+        }
+        // También cargar el contenido si Quill está vacío
+        const quillText = (quill.getText() || "").trim();
+        if (!quillText && info.suggestedExcerpt) {
+          const html = `<p>${info.suggestedExcerpt.replace(/[&<>"']/g, (c) => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+          })[c])}</p>`;
+          quill.clipboard.dangerouslyPasteHTML(html);
+          filled.push("contenido");
+        }
+        const filledMsg = filled.length ? ` · cargué ${filled.join(", ")}` : "";
+        ytStatus.innerHTML = `
+          <img src="${thumb}" alt="">
+          <span><strong>Detectado video de YouTube</strong> · tipo Videoteca · portada${filledMsg}</span>
+        `;
+      } catch {
+        // En caso de error, dejamos solo el feedback básico
+        ytStatus.innerHTML = `
+          <img src="${thumb}" alt="">
+          <span><strong>Detectado video de YouTube</strong> · tipo Videoteca y portada cargada</span>
+        `;
+      }
+    }
+
+    videoEmbed.addEventListener("input", () => applyYouTube(videoEmbed.value));
+    videoEmbed.addEventListener("paste", () => {
+      setTimeout(() => applyYouTube(videoEmbed.value), 50);
+    });
+    // Si ya viene con valor inicial pero no se ha generado feedback aún
+    if (videoEmbed.value && !featured.value) {
+      applyYouTube(videoEmbed.value);
+    }
+
+    // Mark dirty on any input change
+    form.querySelectorAll("input, textarea, select").forEach((el) => {
+      el.addEventListener("input", markDirty);
+      el.addEventListener("change", markDirty);
+    });
+
+    // ===== Combobox de categoría =====
+    const catCombo = document.getElementById("catCombo");
+    const catInput = document.getElementById("category");
+    const catList = catCombo.querySelector(".combo-list");
+    const catToggle = catCombo.querySelector(".combo-toggle");
+    const catOptions = JSON.parse(catCombo.dataset.categories || "[]");
+
+    function renderCatList(filter) {
+      const q = (filter || "").trim().toLowerCase();
+      const filtered = catOptions.filter((c) => c.toLowerCase().includes(q));
+      catList.innerHTML = "";
+      for (const c of filtered) {
+        const li = document.createElement("li");
+        li.textContent = c;
+        li.addEventListener("mousedown", (e) => { e.preventDefault(); catInput.value = c; closeCatList(); markDirty(); });
+        catList.appendChild(li);
+      }
+      if (q && !catOptions.some((c) => c.toLowerCase() === q)) {
+        const li = document.createElement("li");
+        li.className = "new";
+        li.textContent = `Crear nueva: "${filter}"`;
+        li.addEventListener("mousedown", (e) => { e.preventDefault(); catInput.value = filter; closeCatList(); markDirty(); });
+        catList.appendChild(li);
+      }
+      catList.hidden = catList.children.length === 0;
+    }
+    catInput.addEventListener("focus", () => renderCatList(catInput.value));
+    catInput.addEventListener("input", () => renderCatList(catInput.value));
+    catToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (catList.hidden) { catInput.focus(); renderCatList(catInput.value); }
+      else catList.hidden = true;
+    });
+    document.addEventListener("click", (e) => { if (!catCombo.contains(e.target)) catList.hidden = true; });
+    function closeCatList() { catList.hidden = true; }
+
+    // ===== Quill editor =====
+    const quill = new Quill("#editor-host", {
+      theme: "snow",
+      modules: { toolbar: "#quill-toolbar" },
+      placeholder: "Escribe aquí tu contenido…",
+    });
+    if (bodyInput.value) {
+      quill.clipboard.dangerouslyPasteHTML(bodyInput.value);
+      // Reset dirty (la carga inicial no es "cambio")
+      setTimeout(() => { dirty = false; saveStatus.textContent = mode === "edit" ? "Sin cambios pendientes" : "Aún sin guardar"; }, 80);
+    }
+    quill.on("text-change", markDirty);
+
+    // ===== Tags =====
+    const tagInput = document.getElementById("tagInput");
+    const tagsBox = document.getElementById("tagsBox");
+    function getTags() { return [...tagsBox.querySelectorAll(".tag-chip")].map((el) => el.dataset.tag); }
+    function addTag(t) {
+      t = String(t || "").trim().toLowerCase();
+      if (!t || getTags().includes(t)) return;
+      const chip = document.createElement("span");
+      chip.className = "tag-chip"; chip.dataset.tag = t;
+      chip.innerHTML = t + '<button type="button" class="tag-remove" aria-label="Quitar">×</button>';
+      tagsBox.insertBefore(chip, tagInput);
+      markDirty();
+    }
+    tagsBox.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tag-remove");
+      if (btn) { btn.closest(".tag-chip").remove(); markDirty(); }
+      else tagInput.focus();
+    });
+    tagInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault(); addTag(tagInput.value); tagInput.value = "";
+      } else if (e.key === "Backspace" && tagInput.value === "") {
+        const chips = tagsBox.querySelectorAll(".tag-chip");
+        if (chips.length) { chips[chips.length - 1].remove(); markDirty(); }
+      }
+    });
+    tagInput.addEventListener("blur", () => { if (tagInput.value.trim()) { addTag(tagInput.value); tagInput.value = ""; } });
+
+    // ===== beforeunload warning si hay cambios =====
+    window.addEventListener("beforeunload", (e) => {
+      if (dirty) { e.preventDefault(); e.returnValue = ""; }
+    });
+
+    // ===== Submit =====
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      const origText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg> Guardando…';
+      saveStatus.innerHTML = `<span style="color:var(--c-text-dim)">Guardando…</span>`;
+
+      bodyInput.value = quill.root.innerHTML;
+      const fd = new FormData(form);
+      const payload = {
+        title: fd.get("title"),
+        date: fd.get("date"),
+        type: fd.get("type"),
+        category: (fd.get("category") || "").toString().trim(),
+        tags: getTags(),
+        excerpt: fd.get("excerpt"),
+        body: bodyInput.value,
+        featuredImage: fd.get("featuredImage"),
+        videoEmbed: fd.get("videoEmbed"),
+        author: fd.get("author"),
+        seoTitle: fd.get("seoTitle"),
+        seoDescription: fd.get("seoDescription"),
+        draft: !!fd.get("draft"),
+      };
+
+      try {
+        let res;
+        if (mode === "create") {
+          payload.slug = fd.get("slug");
+          res = await fetch("/api/admin/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        } else {
+          payload.newSlug = fd.get("slug");
+          res = await fetch(`/api/admin/posts/${encodeURIComponent(originalSlug)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          saveBtn.disabled = false; saveBtn.innerHTML = origText;
+          saveStatus.innerHTML = `<span class="err">●</span> ${data.error || "Error al guardar"}`;
+          window.toast && toast("error", "No se pudo guardar", data.error || "Inténtalo de nuevo");
+          return;
+        }
+        markSaved();
+        window.toast && toast("success", "Cambios guardados", "Los cambios ya están visibles en el sitio.");
+        if (mode === "create" || (data.slug && data.slug !== originalSlug)) {
+          dirty = false;
+          setTimeout(() => { window.location.href = `/admin/posts/${encodeURIComponent(data.slug)}`; }, 600);
+          return;
+        }
+        saveBtn.disabled = false; saveBtn.innerHTML = origText;
+      } catch {
+        saveBtn.disabled = false; saveBtn.innerHTML = origText;
+        saveStatus.innerHTML = `<span class="err">●</span> Error de red`;
+        window.toast && toast("error", "Error de red", "Verifica tu conexión.");
+      }
+    });
+
+    // ===== Delete =====
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", async () => {
+        const ok = await window.confirmDialog({
+          title: "¿Eliminar publicación?",
+          message: "Esta acción no se puede deshacer. La URL pública dejará de funcionar inmediatamente.",
+          confirmLabel: "Sí, eliminar",
+          danger: true,
+        });
+        if (!ok) return;
+        deleteBtn.disabled = true; deleteBtn.textContent = "Eliminando…";
+        try {
+          const res = await fetch(`/api/admin/posts/${encodeURIComponent(originalSlug)}`, { method: "DELETE" });
+          if (!res.ok) {
+            deleteBtn.disabled = false; deleteBtn.textContent = "Eliminar publicación";
+            window.toast && toast("error", "No se pudo eliminar");
+            return;
+          }
+          dirty = false;
+          window.toast && toast("success", "Publicación eliminada");
+          setTimeout(() => { window.location.href = "/admin/posts"; }, 500);
+        } catch {
+          deleteBtn.disabled = false; deleteBtn.textContent = "Eliminar publicación";
+          window.toast && toast("error", "Error de red");
+        }
+      });
+    }
+  })();
+  </script>
+</form>

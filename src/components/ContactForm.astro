@@ -1,0 +1,158 @@
+---
+/**
+ * Formulario de contacto.
+ * Hace POST a /api/contact (Netlify Function que usa Resend).
+ * En éxito, redirige a /gracias/.
+ */
+interface Props {
+  successPath?: string;
+}
+const { successPath = "/gracias/" } = Astro.props;
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || "";
+---
+
+<form
+  id="contact-form"
+  method="POST"
+  action="/api/contact"
+  data-success={successPath}
+  class="space-y-5"
+>
+  {/* Honeypot anti-spam (campo oculto) */}
+  <p class="hidden" aria-hidden="true">
+    <label>No llenar: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+  </p>
+  {/* Timestamp para detectar bots que llenan en < 2 segundos */}
+  <input type="hidden" name="_ts" id="contact-ts" value="" />
+
+  <div class="grid gap-5 md:grid-cols-2">
+    <div>
+      <label for="nombre" class="block text-xs font-medium uppercase tracking-widest text-ink/70 mb-2">
+        Tu nombre
+      </label>
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        required
+        autocomplete="name"
+        class="w-full border-b border-ink/30 bg-transparent px-0 py-2.5 text-sm focus:border-gold focus:outline-none"
+      />
+    </div>
+
+    <div>
+      <label for="email" class="block text-xs font-medium uppercase tracking-widest text-ink/70 mb-2">
+        Email
+      </label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        required
+        autocomplete="email"
+        class="w-full border-b border-ink/30 bg-transparent px-0 py-2.5 text-sm focus:border-gold focus:outline-none"
+      />
+    </div>
+
+    <div>
+      <label for="celular" class="block text-xs font-medium uppercase tracking-widest text-ink/70 mb-2">
+        Celular
+      </label>
+      <input
+        type="tel"
+        id="celular"
+        name="celular"
+        autocomplete="tel"
+        class="w-full border-b border-ink/30 bg-transparent px-0 py-2.5 text-sm focus:border-gold focus:outline-none"
+      />
+    </div>
+
+    <div>
+      <label for="asunto" class="block text-xs font-medium uppercase tracking-widest text-ink/70 mb-2">
+        Asunto <span class="text-ink/40 normal-case">(opcional)</span>
+      </label>
+      <input
+        type="text"
+        id="asunto"
+        name="asunto"
+        class="w-full border-b border-ink/30 bg-transparent px-0 py-2.5 text-sm focus:border-gold focus:outline-none"
+      />
+    </div>
+  </div>
+
+  <div>
+    <label for="mensaje" class="block text-xs font-medium uppercase tracking-widest text-ink/70 mb-2">
+      Tu mensaje
+    </label>
+    <textarea
+      id="mensaje"
+      name="mensaje"
+      rows="5"
+      required
+      class="w-full border-b border-ink/30 bg-transparent px-0 py-2.5 text-sm focus:border-gold focus:outline-none resize-y"
+    ></textarea>
+  </div>
+
+  {/* Cloudflare Turnstile — solo se activa si la sitekey está configurada (env PUBLIC_TURNSTILE_SITE_KEY) */}
+  {turnstileSiteKey && (
+    <div class="pt-2">
+      <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" data-size="flexible"></div>
+    </div>
+  )}
+
+  <div class="pt-2 flex items-center gap-4">
+    <button id="contact-submit" type="submit" class="btn-primary">
+      <span class="submit-label">Enviar</span>
+      <span class="submit-loading hidden">Enviando…</span>
+    </button>
+    <p id="contact-error" class="text-sm text-red-600 hidden"></p>
+  </div>
+</form>
+
+{turnstileSiteKey && (
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer is:inline></script>
+)}
+
+<script>
+  const form = document.getElementById("contact-form") as HTMLFormElement | null;
+  if (form) {
+    // Marca el momento en que el form se hizo visible (anti-bot)
+    const tsEl = document.getElementById("contact-ts") as HTMLInputElement | null;
+    if (tsEl) tsEl.value = String(Date.now());
+
+    const btn = document.getElementById("contact-submit") as HTMLButtonElement;
+    const errEl = document.getElementById("contact-error") as HTMLElement;
+    const labelEl = btn.querySelector(".submit-label") as HTMLElement;
+    const loadingEl = btn.querySelector(".submit-loading") as HTMLElement;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      labelEl.classList.add("hidden");
+      loadingEl.classList.remove("hidden");
+
+      try {
+        const fd = new FormData(form);
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: new URLSearchParams(fd as any),
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `HTTP ${res.status}`);
+        }
+        const success = form.getAttribute("data-success") || "/gracias/";
+        window.location.href = success;
+      } catch (err) {
+        errEl.textContent =
+          "No se pudo enviar el mensaje. Verifique los datos o intente más tarde.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        labelEl.classList.remove("hidden");
+        loadingEl.classList.add("hidden");
+      }
+    });
+  }
+</script>

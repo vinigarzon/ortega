@@ -1,0 +1,124 @@
+---
+import { getSiteSettings } from "../lib/settings";
+const { site } = await getSiteSettings();
+
+const navItems = [
+  { href: "/#inicio", label: "Inicio" },
+  { href: "/#historia", label: "Historia" },
+  { href: "/#mision", label: "Misión y Visión" },
+  { href: "/#equipo", label: "Abogados" },
+  { href: "/blog/", label: "Blog" },
+  { href: "/videoteca/", label: "Videoteca" },
+  { href: "/contacto/", label: "Contacto" },
+];
+
+const logo = site?.logo ?? "/uploads/brand/logo-horizontal.png";
+const title = site?.title ?? "Ortega & Ortega Abogados";
+---
+
+<header
+  class="site-header sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-ink/10"
+>
+  <div class="container-site flex items-center justify-between py-3 md:py-4">
+    <a href="/" class="flex items-center gap-3 shrink-0" aria-label="Inicio">
+      <img
+        src={logo}
+        alt={title}
+        class="h-10 md:h-12 w-auto"
+        loading="eager"
+        decoding="async"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex'"
+      />
+      <span
+        class="hidden font-serif text-base md:text-lg font-semibold tracking-tight text-ink"
+        >ORTEGA &amp; ORTEGA</span
+      >
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-7" aria-label="Principal">
+      {
+        navItems.map((item) => (
+          <a
+            href={item.href}
+            class="text-[13px] font-medium uppercase tracking-widest text-ink/80 hover:text-gold"
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <button
+      id="mobile-menu-btn"
+      class="lg:hidden inline-flex items-center justify-center w-10 h-10 text-ink"
+      aria-label="Abrir menú"
+      aria-expanded="false"
+      aria-controls="mobile-nav"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="w-6 h-6"
+        ><line x1="3" y1="6" x2="21" y2="6"></line><line
+          x1="3"
+          y1="12"
+          x2="21"
+          y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg
+      >
+    </button>
+  </div>
+
+  <nav
+    id="mobile-nav"
+    hidden
+    class="mobile-nav lg:hidden border-t border-ink/10 bg-white"
+    aria-label="Móvil"
+  >
+    <ul class="container-site flex flex-col py-3">
+      {
+        navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="block py-3 text-sm font-medium uppercase tracking-widest text-ink hover:text-gold"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>
+
+<script>
+  const header = document.querySelector(".site-header");
+  const btn = document.getElementById("mobile-menu-btn");
+  const nav = document.getElementById("mobile-nav");
+
+  btn?.addEventListener("click", () => {
+    const open = nav?.hasAttribute("hidden") ? false : true;
+    if (open) {
+      nav?.setAttribute("hidden", "");
+      btn?.setAttribute("aria-expanded", "false");
+    } else {
+      nav?.removeAttribute("hidden");
+      btn?.setAttribute("aria-expanded", "true");
+    }
+  });
+
+  const onScroll = () => {
+    if (window.scrollY > 8) {
+      header?.classList.add("is-scrolled");
+    } else {
+      header?.classList.remove("is-scrolled");
+    }
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+</script>

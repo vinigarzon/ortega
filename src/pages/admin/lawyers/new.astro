@@ -1,0 +1,18 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import LawyerEditor from "@/components/admin/LawyerEditor.astro";
+
+export const prerender = false;
+---
+<AdminLayout title="Nuevo miembro" active="lawyers">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">
+        <a href="/admin/lawyers">Equipo</a> · Nuevo
+      </div>
+      <h1>Nuevo miembro del equipo</h1>
+      <p class="page-header__desc">Aparece en la sección "Nuestro Equipo" del sitio si está marcado como visible.</p>
+    </div>
+  </header>
+  <LawyerEditor mode="create" />
+</AdminLayout>

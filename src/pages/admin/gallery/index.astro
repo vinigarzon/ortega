@@ -1,0 +1,389 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { getGalleryConfig, listGalleryItems } from "@/lib/queries";
+
+export const prerender = false;
+
+const config = await getGalleryConfig();
+const items = await listGalleryItems();
+---
+<AdminLayout title="Galería" active="gallery">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">Contenido</div>
+      <h1>Galería del home</h1>
+      <p class="page-header__desc">
+        Carrusel de imágenes que aparece en la sección "Galería" de la página de inicio.
+        Tienes {items.length} imagen{items.length === 1 ? "" : "es"} cargada{items.length === 1 ? "" : "s"}.
+      </p>
+    </div>
+    <div class="page-header__actions">
+      <button type="button" class="btn btn-secondary" id="addBtn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar imagen
+      </button>
+      <button type="button" class="btn btn-primary" id="saveBtn">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar cambios
+      </button>
+    </div>
+  </header>
+
+  {/* ============= CONFIGURACIÓN ============= */}
+  <section class="card card-pad-0" style="margin-bottom: 24px;">
+    <header class="card-header">
+      <div>
+        <h2>Configuración del carrusel</h2>
+        <p>Cómo se comporta la transición entre imágenes.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <div class="config-grid">
+        <label class="setting-row">
+          <span class="setting-row__main">
+            <strong>Reproducción automática</strong>
+            <span>Las imágenes cambian solas cada cierto tiempo.</span>
+          </span>
+          <input type="checkbox" id="autoplay" class="toggle" checked={config.autoplay} />
+        </label>
+        <label class="setting-row">
+          <span class="setting-row__main">
+            <strong>Mostrar flechas</strong>
+            <span>Botones ◂ ▸ para navegar manualmente.</span>
+          </span>
+          <input type="checkbox" id="showArrows" class="toggle" checked={config.showArrows} />
+        </label>
+        <label class="setting-row">
+          <span class="setting-row__main">
+            <strong>Puntos de paginación</strong>
+            <span>Indicadores ●●● bajo el carrusel.</span>
+          </span>
+          <input type="checkbox" id="showDots" class="toggle" checked={config.showDots} />
+        </label>
+        <label class="setting-row">
+          <span class="setting-row__main">
+            <strong>Pausar al pasar el mouse</strong>
+            <span>Si el usuario hace hover sobre la imagen, se detiene.</span>
+          </span>
+          <input type="checkbox" id="pauseOnHover" class="toggle" checked={config.pauseOnHover} />
+        </label>
+        <div class="config-pair">
+          <label class="field">
+            <span class="field-label">Segundos entre imágenes</span>
+            <input type="number" id="intervalSeconds" min="2" max="30" class="input" value={config.intervalSeconds} />
+            <small class="field-help">Entre 2 y 30 segundos.</small>
+          </label>
+          <label class="field">
+            <span class="field-label">Duración del fundido (ms)</span>
+            <input type="number" id="transitionMs" min="200" max="3000" step="50" class="input" value={config.transitionMs} />
+            <small class="field-help">Entre 200 y 3000 milisegundos.</small>
+          </label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ============= IMÁGENES ============= */}
+  <section class="card card-pad-0">
+    <header class="card-header">
+      <div>
+        <h2>Imágenes</h2>
+        <p>Arrastra el handle ⋮⋮ para reordenar, o usa las flechas.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <div id="itemsGrid" class="gallery-grid">
+        {items.map((it) => (
+          <article class="gallery-item">
+            <div class="gallery-item__photo">
+              {it.image
+                ? <img src={it.image} alt="" loading="lazy" />
+                : <div class="gallery-item__placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  </div>}
+              <div class="gallery-item__overlay">
+                <button type="button" class="icon-btn icon-btn--light up" title="Subir">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <button type="button" class="icon-btn icon-btn--light down" title="Bajar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <button type="button" class="icon-btn icon-btn--danger del" title="Eliminar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="gallery-item__body">
+              <div class="field">
+                <input type="text" class="input image-input" name="image" value={it.image} placeholder="Subir o pegar URL…" />
+              </div>
+              <div class="field">
+                <input type="text" class="input caption-input" value={it.caption ?? ""} placeholder="Título (opcional)" />
+              </div>
+              <select class="select category-input">
+                {["equipo", "oficina", "eventos", "otros"].map((c) => (
+                  <option value={c} selected={(it.category ?? "oficina") === c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {items.length === 0 && (
+        <div class="empty-state">
+          <div class="empty-state__icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3>Sin imágenes</h3>
+          <p>Agrega la primera imagen para que aparezca en el carrusel del home.</p>
+          <button type="button" class="btn btn-primary" id="addBtn2">Agregar primera imagen</button>
+        </div>
+      )}
+    </div>
+  </section>
+
+  {/* Sticky save bar */}
+  <div class="save-bar">
+    <div class="save-bar__status" id="saveStatus">Sin cambios pendientes</div>
+    <a class="btn btn-ghost" href="/admin/gallery">Cancelar</a>
+    <button type="button" class="btn btn-primary" id="saveBtn2">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar cambios
+    </button>
+  </div>
+
+  <style>
+    .config-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 880px) { .config-grid { grid-template-columns: 1fr; } }
+    .config-pair {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      padding-top: 8px; margin-top: 4px;
+      border-top: 1px solid var(--c-border-soft);
+    }
+    @media (max-width: 600px) { .config-pair { grid-template-columns: 1fr; } }
+
+    .setting-row {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 16px;
+      background: var(--c-surface-2);
+      border: 1px solid var(--c-border-soft);
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: background var(--tr-fast);
+    }
+    .setting-row:hover { background: var(--c-surface-3); }
+    .setting-row__main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .setting-row__main strong { font-size: 13.5px; color: var(--c-text); font-weight: 600; }
+    .setting-row__main span { font-size: 12px; color: var(--c-text-soft); }
+
+    .toggle {
+      appearance: none; -webkit-appearance: none;
+      width: 38px; height: 22px; border-radius: var(--r-full);
+      background: var(--c-border); cursor: pointer; position: relative;
+      transition: background var(--tr-fast); flex-shrink: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: var(--r-full);
+      background: #fff; box-shadow: var(--sh-sm);
+      transition: transform var(--tr-fast);
+    }
+    .toggle:checked { background: var(--c-primary); }
+    .toggle:checked::after { transform: translateX(16px); }
+
+    /* Grid de imágenes */
+    .gallery-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .gallery-item {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border-soft);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      transition: box-shadow var(--tr-base), border-color var(--tr-base);
+    }
+    .gallery-item:hover { box-shadow: var(--sh-md); border-color: var(--c-border); }
+    .gallery-item__photo {
+      position: relative; aspect-ratio: 4 / 3;
+      background: var(--c-surface-2);
+      overflow: hidden;
+    }
+    .gallery-item__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-item__placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--c-text-soft);
+    }
+    .gallery-item__placeholder svg { width: 40px; height: 40px; }
+    .gallery-item__overlay {
+      position: absolute; top: 8px; right: 8px;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity var(--tr-fast);
+    }
+    .gallery-item:hover .gallery-item__overlay { opacity: 1; }
+    .icon-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border: 0; border-radius: var(--r-md);
+      background: rgba(0,0,0,.6); color: #fff;
+      cursor: pointer; backdrop-filter: blur(4px);
+      transition: background var(--tr-fast);
+    }
+    .icon-btn:hover { background: rgba(0,0,0,.8); }
+    .icon-btn--danger:hover { background: var(--c-danger); }
+    .icon-btn svg { width: 16px; height: 16px; }
+
+    .gallery-item__body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .gallery-item__body .input, .gallery-item__body .select { font-size: 12.5px; padding: 8px 10px; }
+  </style>
+
+  <script is:inline>
+  (function () {
+    const grid = document.getElementById("itemsGrid");
+    const addBtn = document.getElementById("addBtn");
+    const addBtn2 = document.getElementById("addBtn2");
+    const saveBtn = document.getElementById("saveBtn");
+    const saveBtn2 = document.getElementById("saveBtn2");
+    const saveStatus = document.getElementById("saveStatus");
+    let dirty = false;
+
+    function markDirty() {
+      if (!dirty) { dirty = true; saveStatus.innerHTML = `<span class="err">●</span> Hay cambios sin guardar`; }
+    }
+
+    function bind(item) {
+      item.querySelector(".up").onclick = () => {
+        const p = item.previousElementSibling;
+        if (p) { grid.insertBefore(item, p); markDirty(); }
+      };
+      item.querySelector(".down").onclick = () => {
+        const n = item.nextElementSibling;
+        if (n) { grid.insertBefore(n, item); markDirty(); }
+      };
+      item.querySelector(".del").onclick = async () => {
+        const ok = await window.confirmDialog({
+          title: "¿Eliminar esta imagen?",
+          message: "Se quitará de la galería del sitio al guardar.",
+          confirmLabel: "Eliminar",
+        });
+        if (ok) { item.remove(); markDirty(); }
+      };
+      item.querySelectorAll("input, select").forEach((el) => {
+        el.addEventListener("input", markDirty);
+        el.addEventListener("change", markDirty);
+      });
+      // Sincronizar img preview cuando cambie el URL
+      const imgInput = item.querySelector(".image-input");
+      const photoBox = item.querySelector(".gallery-item__photo");
+      imgInput.addEventListener("input", () => {
+        const v = imgInput.value.trim();
+        photoBox.innerHTML = v
+          ? `<img src="${v}" alt="">${overlayHtml}`
+          : `<div class="gallery-item__placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>${overlayHtml}`;
+        bindOverlay(item);
+      });
+    }
+
+    const overlayHtml = `
+      <div class="gallery-item__overlay">
+        <button type="button" class="icon-btn icon-btn--light up" title="Subir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+        <button type="button" class="icon-btn icon-btn--light down" title="Bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <button type="button" class="icon-btn icon-btn--danger del" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+    `;
+
+    function bindOverlay(item) { bind(item); }
+
+    grid.querySelectorAll(".gallery-item").forEach(bind);
+
+    function addNew() {
+      const item = document.createElement("article");
+      item.className = "gallery-item";
+      item.innerHTML = `
+        <div class="gallery-item__photo">
+          <div class="gallery-item__placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          ${overlayHtml}
+        </div>
+        <div class="gallery-item__body">
+          <div class="field"><input type="text" class="input image-input" name="image" placeholder="Subir o pegar URL…"></div>
+          <div class="field"><input type="text" class="input caption-input" placeholder="Título (opcional)"></div>
+          <select class="select category-input">
+            <option value="equipo">equipo</option>
+            <option value="oficina" selected>oficina</option>
+            <option value="eventos">eventos</option>
+            <option value="otros">otros</option>
+          </select>
+        </div>
+      `;
+      grid.appendChild(item);
+      bind(item);
+      markDirty();
+      // Focus el input para que el uploader se inicialice
+      setTimeout(() => item.querySelector(".image-input").focus(), 50);
+    }
+
+    addBtn.addEventListener("click", addNew);
+    if (addBtn2) addBtn2.addEventListener("click", addNew);
+
+    window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+    async function save() {
+      [saveBtn, saveBtn2].forEach((b) => b && (b.disabled = true));
+      saveStatus.innerHTML = `<span style="color:var(--c-text-dim)">Guardando…</span>`;
+
+      const config = {
+        autoplay: document.getElementById("autoplay").checked,
+        intervalSeconds: parseInt(document.getElementById("intervalSeconds").value, 10) || 5,
+        transitionMs: parseInt(document.getElementById("transitionMs").value, 10) || 700,
+        showArrows: document.getElementById("showArrows").checked,
+        showDots: document.getElementById("showDots").checked,
+        pauseOnHover: document.getElementById("pauseOnHover").checked,
+      };
+
+      const items = [...grid.querySelectorAll(".gallery-item")].map((li, i) => ({
+        image: li.querySelector(".image-input").value.trim(),
+        caption: li.querySelector(".caption-input").value.trim(),
+        category: li.querySelector(".category-input").value,
+        order: i + 1,
+      })).filter((x) => x.image);
+
+      try {
+        const res = await fetch("/api/admin/gallery", {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config, items }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          [saveBtn, saveBtn2].forEach((b) => b && (b.disabled = false));
+          saveStatus.innerHTML = `<span class="err">●</span> ${data.error || "Error al guardar"}`;
+          window.toast && toast("error", "No se pudo guardar");
+          return;
+        }
+        dirty = false;
+        saveStatus.innerHTML = `<span class="ok">✓</span> Guardado (${data.count} imágenes)`;
+        window.toast && toast("success", "Galería actualizada", `${data.count} imágenes guardadas.`);
+        [saveBtn, saveBtn2].forEach((b) => b && (b.disabled = false));
+      } catch {
+        [saveBtn, saveBtn2].forEach((b) => b && (b.disabled = false));
+        saveStatus.innerHTML = `<span class="err">●</span> Error de red`;
+        window.toast && toast("error", "Error de red");
+      }
+    }
+
+    saveBtn.addEventListener("click", save);
+    if (saveBtn2) saveBtn2.addEventListener("click", save);
+
+    // Cualquier cambio en la config inicial también marca dirty
+    document.querySelectorAll(".config-grid input, .config-grid select").forEach((el) => {
+      el.addEventListener("input", markDirty);
+      el.addEventListener("change", markDirty);
+    });
+  })();
+  </script>
+</AdminLayout>

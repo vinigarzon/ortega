@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Forms (Netlify detection)</title>
+    <meta name="robots" content="noindex,nofollow" />
+  </head>
+  <body>
+    <!--
+      Esta página existe solamente para que Netlify Forms detecte el formulario
+      de contacto durante el build. No es visible al público.
+    -->
+    <form
+      name="contacto"
+      method="POST"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+    >
+      <input type="hidden" name="form-name" value="contacto" />
+      <input type="text" name="nombre" />
+      <input type="email" name="email" />
+      <input type="tel" name="celular" />
+      <input type="text" name="asunto" />
+      <textarea name="mensaje"></textarea>
+      <input name="bot-field" />
+    </form>
+  </body>
+</html>

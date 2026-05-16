@@ -1,0 +1,180 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { countPosts, listPosts, listLawyers, listGalleryItems } from "@/lib/queries";
+
+export const prerender = false;
+
+const [blogN, videoN, totalIncDrafts, publishedN, lawyers, gallery, recent] = await Promise.all([
+  countPosts({ type: "blog" }),
+  countPosts({ type: "videoteca" }),
+  countPosts({ includeDrafts: true }),
+  countPosts(),
+  listLawyers(),
+  listGalleryItems(),
+  listPosts({ includeDrafts: true, limit: 6 }),
+]);
+const draftN = totalIncDrafts - publishedN;
+
+function fmtDate(s: string) {
+  try {
+    return new Date(s).toLocaleDateString("es-EC", { day: "2-digit", month: "short", year: "numeric" });
+  } catch { return s; }
+}
+const greeting = (() => {
+  const h = new Date().getHours();
+  if (h < 12) return "Buenos días";
+  if (h < 19) return "Buenas tardes";
+  return "Buenas noches";
+})();
+const firstName = (user => user?.email?.split("@")[0]?.split(".")[0] ?? "")((Astro.locals as any).user);
+const capName = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : "";
+
+const stats = [
+  { label: "Artículos",  value: blogN,    tone: "tone-navy",  href: "/admin/posts?type=blog",      icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' },
+  { label: "Videos",     value: videoN,   tone: "tone-gold",  href: "/admin/posts?type=videoteca", icon: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>' },
+  { label: "Borradores", value: draftN,   tone: "tone-amber", href: "/admin/posts?draft=1",        icon: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+  { label: "Equipo",     value: lawyers.length, tone: "tone-pink",  href: "/admin/lawyers", icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  { label: "Galería",    value: gallery.length, tone: "tone-green", href: "/admin/gallery", icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>' },
+];
+
+const actions = [
+  { title: "Crear publicación", desc: "Nuevo artículo o video", href: "/admin/posts/new", tone: "tone-navy",
+    icon: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>' },
+  { title: "Añadir miembro", desc: "Sumar persona al equipo", href: "/admin/lawyers/new", tone: "tone-pink",
+    icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>' },
+  { title: "Editar galería", desc: "Reordenar y subir imágenes", href: "/admin/gallery", tone: "tone-green",
+    icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>' },
+  { title: "Datos del despacho", desc: "Teléfonos, email, dirección", href: "/admin/settings#contact", tone: "tone-amber",
+    icon: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2z"/>' },
+];
+
+const arrow = '<polyline points="9 18 15 12 9 6"/>';
+---
+<AdminLayout title="Inicio" active="dashboard">
+  <header class="page-header">
+    <div class="page-header__title">
+      <div class="page-header__breadcrumb">Panel</div>
+      <h1>{greeting}{capName ? `, ${capName}` : ""}</h1>
+      <p class="page-header__desc">Resumen del contenido y accesos rápidos a las áreas más usadas.</p>
+    </div>
+    <div class="page-header__actions">
+      <a class="btn btn-secondary" href="/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver sitio
+      </a>
+      <a class="btn btn-primary" href="/admin/posts/new">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva publicación
+      </a>
+    </div>
+  </header>
+
+  {/* Métricas */}
+  <div class="dash-stats">
+    {stats.map((s) => (
+      <a href={s.href} class="stat-card">
+        <div class={`stat-card__icon ${s.tone}`}>
+          <svg viewBox="0 0 24 24" set:html={s.icon} />
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__label">{s.label}</span>
+          <span class="stat-card__value">{s.value}</span>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <h2 class="dash-section-title">Acciones rápidas</h2>
+  <div class="dash-actions">
+    {actions.map((a) => (
+      <a href={a.href} class="action-card">
+        <div class={`action-card__icon ${a.tone}`}>
+          <svg viewBox="0 0 24 24" set:html={a.icon} />
+        </div>
+        <div class="action-card__body">
+          <strong>{a.title}</strong>
+          <p>{a.desc}</p>
+        </div>
+        <div class="action-card__arrow"><svg viewBox="0 0 24 24" set:html={arrow} /></div>
+      </a>
+    ))}
+  </div>
+
+  <section class="card card-pad-0" style="margin-top: 32px;">
+    <header class="card-header">
+      <div>
+        <h2>Editados recientemente</h2>
+        <p>Las últimas {recent.length} publicaciones modificadas</p>
+      </div>
+      <a class="btn btn-secondary" href="/admin/posts">Ver todas</a>
+    </header>
+
+    {recent.length === 0 ? (
+      <div class="empty-state">
+        <div class="empty-state__icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <h3>Aún no hay publicaciones</h3>
+        <p>Empieza creando tu primer artículo o video. Aparecerá aquí y en la lista de publicaciones.</p>
+        <a class="btn btn-primary" href="/admin/posts/new">Crear la primera</a>
+      </div>
+    ) : (
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-thumb"></th>
+            <th>Título</th>
+            <th>Tipo</th>
+            <th>Categoría</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {recent.map((p) => (
+            <tr>
+              <td>
+                <div class="dt-thumb">
+                  {p.featuredImage
+                    ? <img src={p.featuredImage} alt="" loading="lazy" />
+                    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
+                </div>
+              </td>
+              <td>
+                <a href={`/admin/posts/${p.slug}`} class="dt-title">{p.title}</a>
+                <div class="dt-slug">/{p.type === "videoteca" ? "videoteca" : "blog"}/{p.slug}</div>
+              </td>
+              <td><span class={`badge ${p.type === "videoteca" ? "badge-video" : "badge-blog"}`}>{p.type === "videoteca" ? "Video" : "Artículo"}</span></td>
+              <td class="dt-cell-muted">{p.category}</td>
+              <td class="dt-cell-muted">{fmtDate(p.date)}</td>
+              <td>{p.draft
+                ? <span class="badge badge-draft">Borrador</span>
+                : <span class="badge badge-pub">Publicado</span>
+              }</td>
+              <td class="col-actions">
+                <div class="dt-row-actions">
+                  <a class="btn btn-ghost btn-sm" href={`/admin/posts/${p.slug}`}>Editar</a>
+                  <a class="btn btn-ghost btn-sm" href={`/${p.type === "videoteca" ? "videoteca" : "blog"}/${p.slug}/`} target="_blank" rel="noopener">Ver</a>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </section>
+
+  <style>
+    .dash-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px; margin-bottom: 36px;
+    }
+    .dash-section-title {
+      font-family: var(--f-display);
+      font-size: 22px; font-weight: 600; margin: 0 0 16px;
+    }
+    .dash-actions {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+  </style>
+</AdminLayout>
