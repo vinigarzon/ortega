@@ -1,0 +1,90 @@
+---
+/**
+ * /blog/ — primera página (12 artículos más recientes).
+ * Las páginas 2+ están en /blog/page/[n].astro
+ */
+import Layout from "../../layouts/Layout.astro";
+import SectionTitle from "../../components/SectionTitle.astro";
+import BlogCard from "../../components/BlogCard.astro";
+import { listPosts, countPosts, listCategories } from "@/lib/queries";
+
+export const prerender = false;
+
+const PAGE_SIZE = 12;
+const currentPage = 1;
+const total = await countPosts({ type: "blog" });
+const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+const posts = await listPosts({ type: "blog", limit: PAGE_SIZE, offset: 0 });
+const categories = await listCategories("blog");
+
+const slugifyCat = (c: string) =>
+  encodeURIComponent(c.toLowerCase().replace(/\s+/g, "-"));
+
+const nextUrl = lastPage > 1 ? "/blog/page/2/" : null;
+---
+<Layout
+  title="Blog"
+  description="Blog de Ortega & Ortega Abogados — entrevistas, análisis y novedades jurídicas en derecho penal y constitucional."
+>
+  <section class="section bg-bone-200">
+    <div class="container-site">
+      <SectionTitle eyebrow="Artículos, novedades y análisis" title="Blog" gold={true} />
+
+      <p class="-mt-6 mb-10 mx-auto max-w-2xl text-center text-ink-700/85 leading-relaxed">
+        En este espacio compartimos contenido escrito con criterios
+        profesionales, novedades normativas y reflexiones sobre asuntos
+        relevantes para empresas, instituciones y personas. Nuestro objetivo es
+        informar con claridad y aportar una visión práctica sobre temas de
+        interés.
+      </p>
+
+      {categories.length > 0 && (
+        <div class="mb-10 flex flex-wrap items-center justify-center gap-2">
+          <a href="/blog/" class="text-[11px] font-semibold uppercase tracking-widest border border-ink bg-ink text-white px-4 py-2 hover:bg-ink-dark">Todos</a>
+          {categories.map((c) => (
+            <a href={`/blog/categoria/${slugifyCat(c)}/`} class="text-[11px] font-semibold uppercase tracking-widest border border-ink/20 text-ink px-4 py-2 hover:border-gold hover:bg-gold hover:text-white transition-colors">{c}</a>
+          ))}
+        </div>
+      )}
+
+      {posts.length === 0 ? (
+        <p class="text-center text-ink/60">Aún no hay publicaciones. Vuelva pronto.</p>
+      ) : (
+        <div class="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p) => (
+            <BlogCard
+              href={`/blog/${p.slug}/`}
+              title={p.title}
+              date={new Date(p.date)}
+              excerpt={p.excerpt ?? ""}
+              category={p.category}
+              featuredImage={p.featuredImage}
+            />
+          ))}
+        </div>
+      )}
+
+      {lastPage > 1 && (
+        <nav class="mt-14 flex items-center justify-center gap-2" aria-label="Paginación">
+          <span class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/10 text-ink/30 cursor-not-allowed">← Anterior</span>
+
+          {Array.from({ length: lastPage }, (_, i) => i + 1).map((n) => {
+            const href = n === 1 ? "/blog/" : `/blog/page/${n}/`;
+            const active = n === currentPage;
+            return active ? (
+              <span aria-current="page" class="inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border border-ink bg-ink text-white">{n}</span>
+            ) : (
+              <a href={href} class="inline-flex items-center justify-center w-10 h-10 text-sm font-medium border border-ink/20 text-ink hover:border-gold hover:text-gold-dark">{n}</a>
+            );
+          })}
+
+          {nextUrl ? (
+            <a href={nextUrl} class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/20 text-ink hover:border-gold hover:text-gold-dark" rel="next">Siguiente →</a>
+          ) : (
+            <span class="inline-flex items-center gap-1 px-4 py-2 text-xs font-semibold uppercase tracking-widest border border-ink/10 text-ink/30 cursor-not-allowed">Siguiente →</span>
+          )}
+        </nav>
+      )}
+    </div>
+  </section>
+</Layout>
